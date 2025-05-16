@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Progress Update - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('patients.view', patient_id=patient.id) }}" class="text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i>Back to Patient
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Add Progress Update for {{ patient.name }}</h2>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('patients.add_progress', patient_id=patient.id) }}">
+                    <div class="form-group mb-3">
+                        <label for="date">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status" name="status" required>
+                            <option value="">-- Select Status --</option>
+                            <option value="Improving">Improving</option>
+                            <option value="Stable">Stable</option>
+                            <option value="Declining">Declining</option>
+                            <option value="Initial Assessment">Initial Assessment</option>
+                            <option value="Major Milestone">Major Milestone</option>
+                            <option value="Treatment Change">Treatment Change</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label for="notes">Progress Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="6" required></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Add Progress Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date as default
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+    });
+</script>
+{% endblock %}

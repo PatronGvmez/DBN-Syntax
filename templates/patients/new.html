@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Patient - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Add New Patient</h2>
+                <a href="{{ url_for('patients.index') }}" class="btn btn-outline">Back to Patients</a>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('patients.new') }}">
+                    <div class="form-group mb-3">
+                        <label for="name">Patient Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="age">Age</label>
+                        <input type="number" class="form-control" id="age" name="age" min="0" max="120">
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="contact_info">Contact Information</label>
+                        <input type="text" class="form-control" id="contact_info" name="contact_info">
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="medical_condition">Medical Condition</label>
+                        <input type="text" class="form-control" id="medical_condition" name="medical_condition" required>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label for="treatment_plan">Treatment Plan</label>
+                        <textarea class="form-control" id="treatment_plan" name="treatment_plan" rows="4"></textarea>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Add Patient</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

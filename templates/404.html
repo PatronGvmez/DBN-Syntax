@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Page Not Found - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <div class="mb-4">
+        <i class="bi bi-exclamation-circle text-secondary" style="font-size: 5rem;"></i>
+    </div>
+    <h1 class="mb-3">404 - Page Not Found</h1>
+    <p class="lead mb-4">The page you are looking for does not exist.</p>
+    <a href="{{ url_for('home') }}" class="btn btn-primary">
+        <i class="bi bi-house me-2"></i>Return to Home
+    </a>
+</div>
+{% endblock %}

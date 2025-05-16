@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}RehabTracker - Rehabilitation Center Management System{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mt-4">
+    <div class="col-md-6">
+        <h1 class="mb-4">Streamline Rehabilitation Patient Care</h1>
+        <p class="lead mb-4">RehabTracker is a comprehensive management system for rehabilitation centers, helping therapists and administrators track patient progress efficiently.</p>
+        
+        <div class="d-flex gap-3 mt-4">
+            {% if not user %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Log In</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline">Register</a>
+            {% else %}
+                {% if user.role == 'admin' %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary">Admin Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('therapists.dashboard') }}" class="btn btn-primary">Therapist Dashboard</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card scale-in">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="bi bi-heart-pulse text-primary" style="font-size: 4rem;"></i>
+                    <h2 class="mt-3">RehabTracker</h2>
+                    <p class="text-muted">Care. Track. Improve.</p>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3 text-center">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1">Streamlined Workflow</h4>
+                            <p class="text-muted mb-0">Efficiently manage patient assignments and treatment plans</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3 text-center">
+                            <i class="bi bi-graph-up-arrow text-primary" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1">Progress Tracking</h4>
+                            <p class="text-muted mb-0">Monitor and document patient rehabilitation journey</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <div class="me-3 text-center">
+                            <i class="bi bi-shield-check text-secondary" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-1">Secure Access</h4>
+                            <p class="text-muted mb-0">Role-based security ensures data privacy and compliance</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-5 pt-4">
+    <h2 class="text-center mb-4">How It Works</h2>
+    
+    <div class="row mt-4">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-person-plus text-white" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3>Patient Registration</h3>
+                    <p class="text-muted">Admins can add new patients and capture essential medical information for proper treatment planning.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-people text-white" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3>Therapist Assignment</h3>
+                    <p class="text-muted">Administrators assign patients to appropriate therapists based on specialty and workload.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="rounded-circle bg-accent d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-clipboard-data text-white" style="font-size: 2rem;"></i>
+                    </div>
+                    <h3>Progress Documentation</h3>
+                    <p class="text-muted">Therapists record progress notes after each session to track treatment effectiveness and patient improvement.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

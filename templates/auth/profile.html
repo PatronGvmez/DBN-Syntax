@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">My Profile</h2>
+                <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-outline">Edit Profile</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-person-fill text-white" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-1">{{ user.name }}</h3>
+                        <p class="text-muted mb-0">{{ user.role.capitalize() }}</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-primary mb-2">Contact Information</h4>
+                        <div class="mb-2">
+                            <strong>Email:</strong> {{ user.email }}
+                        </div>
+                        <div>
+                            <strong>Phone:</strong> {{ user.phone if user.phone else 'Not provided' }}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-primary mb-2">Account Information</h4>
+                        <div class="mb-2">
+                            <strong>Role:</strong> {{ user.role.capitalize() }}
+                        </div>
+                        <div>
+                            <strong>Member Since:</strong> 
+                            {% if user.created_at %}
+                                {{ user.created_at.strftime('%B %d, %Y') if user.created_at.strftime else 'Unknown' }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Patients for {{ therapist.name }} - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('therapists.view', therapist_id=therapist.id) }}" class="text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i>Back to Therapist Profile
+    </a>
+</div>
+
+<h1 class="mb-4">Manage Patients for {{ therapist.name }}</h1>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="mb-0">Currently Assigned Patients</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if patients %}
+                    <div class="list-group list-group-flush">
+                        {% for patient in patients %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="mb-1">{{ patient.name }}</h5>
+                                        <p class="mb-0 text-muted small">{{ patient.medical_condition }}</p>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('therapists.unassign_patient', therapist_id=therapist.id, patient_id=patient.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to unassign this patient?')">
+                                            <i class="bi bi-person-x me-1"></i>Unassign
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center p-4">
+                        <p class="text-muted mb-0">No patients assigned</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="mb-0">Available Patients</h3>
+            </div>
+            <div class="card-body">
+                {% if unassigned_patients %}
+                    <form method="POST" action="{{ url_for('therapists.assign_patient', therapist_id=therapist.id) }}">
+                        <div class="form-group mb-3">
+                            <label for="patient_id">Select Patient to Assign</label>
+                            <select class="form-control" id="patient_id" name="patient_id" required>
+                                <option value="">-- Select Patient --</option>
+                                {% for patient in unassigned_patients %}
+                                    <option value="{{ patient.id }}">{{ patient.name }} ({{ patient.medical_condition }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-person-plus me-2"></i>Assign Patient
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="text-center">
+                        <p class="text-muted mb-3">No more patients available for assignment</p>
+                        <a href="{{ url_for('patients.new') }}" class="btn btn-outline">Add New Patient</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
