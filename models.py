@@ -11,27 +11,11 @@ def initialize_firebase():
     global firebase_app
     if not firebase_app:
         try:
-            # Use environment variables for Firebase configuration
-            project_id = os.getenv('FIREBASE_PROJECT_ID')
-            private_key = os.getenv('FIREBASE_PRIVATE_KEY').replace('\\n', '\n')
-            client_email = os.getenv('FIREBASE_CLIENT_EMAIL')
-            
-            cred = credentials.Certificate({
-                "type": "service_account",
-                "project_id": project_id,
-                "private_key": private_key,
-                "client_email": client_email,
-            })
-            
+            cred = credentials.Certificate(r"jsonFile/dutsyntax-e73be-firebase-adminsdk-fbsvc-80eb57142b.json")
             firebase_app = firebase_admin.initialize_app(cred)
-            print("Firebase initialized successfully")
+            print("Firebase initialized successfully with service account key.")
         except Exception as e:
             print(f"Error initializing Firebase: {e}")
-            
-            # For local development without proper Firebase credentials
-            cred = credentials.Certificate("firebase_config.json")
-            firebase_app = firebase_admin.initialize_app(cred)
-            print("Firebase initialized with local credentials")
 
 def get_db():
     """Returns a Firestore database client."""

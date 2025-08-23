@@ -49,11 +49,13 @@ def dashboard():
             'therapist': therapist
         })
     
+    from datetime import datetime
     return render_template('admin/dashboard.html', 
                           user=user,
                           patient_count=patient_count,
                           therapist_count=therapist_count,
-                          recent_updates=recent_updates)
+                          recent_updates=recent_updates,
+                          now=datetime.now())
 
 @admin_bp.route('/therapists/new', methods=['GET', 'POST'])
 @login_required

@@ -37,11 +37,13 @@ def dashboard():
     recent_updates.sort(key=lambda x: x['update'].get('date', ''), reverse=True)
     recent_updates = recent_updates[:5]  # Limit to 5
     
+    from datetime import datetime
     return render_template('therapists/dashboard.html', 
                           user=user,
                           patients=patients,
                           patient_count=patient_count,
-                          recent_updates=recent_updates)
+                          recent_updates=recent_updates,
+                          now=datetime.now())
 
 @therapists_bp.route('/')
 @login_required
