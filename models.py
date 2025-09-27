@@ -311,3 +311,93 @@ def unassign_patient(therapist_id, patient_id):
         assignment.reference.delete()
     
     return True
+
+# MindLink Community Functions
+def create_mindlink_post(author_id, author_name, content, is_anonymous=False):
+    """Create a new MindLink community post."""
+    try:
+        db = get_db()
+        post_data = {
+            'content': content,
+            'author_id': author_id if not is_anonymous else 'anonymous',
+            'author_name': author_name if not is_anonymous else 'Anonymous Friend',
+            'is_anonymous': is_anonymous,
+            'created_at': firestore.SERVER_TIMESTAMP,
+            'likes': 0,
+            'support_count': 0,
+            'type': 'mindlink_post',
+            'status': 'active'  # For moderation: active, flagged, hidden
+        }
+        
+        doc_ref = db.collection('mindlink_posts').add(post_data)
+        return doc_ref[1].id  # Return the document ID
+        
+    except Exception as e:
+        print(f"Error creating MindLink post: {e}")
+        return None
+
+def get_mindlink_posts(limit=20):
+    """Get recent MindLink community posts."""
+    try:
+        db = get_db()
+        posts_ref = (db.collection('mindlink_posts')
+                    .where('status', '==', 'active')
+                    .order_by('created_at', direction=firestore.Query.DESCENDING)
+                    .limit(limit))
+        
+        posts = []
+        for post_doc in posts_ref.stream():
+            post_data = post_doc.to_dict()
+            post_data['id'] = post_doc.id
+            posts.append(post_data)
+            
+        return posts
+        
+    except Exception as e:
+        print(f"Error getting MindLink posts: {e}")
+        return []
+
+def support_mindlink_post(post_id):
+    """Add support to a MindLink post."""
+    try:
+        db = get_db()
+        post_ref = db.collection('mindlink_posts').document(post_id)
+        
+        # Increment support count
+        post_ref.update({
+            'support_count': firestore.Increment(1)
+        })
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error supporting MindLink post: {e}")
+        return False
+
+def get_mindlink_stats():
+    """Get MindLink community statistics."""
+    try:
+        db = get_db()
+        
+        # Get total posts
+        posts = list(db.collection('mindlink_posts').where('status', '==', 'active').stream())
+        total_posts = len(posts)
+        
+        # Get unique active members (excluding anonymous)
+        unique_authors = set()
+        for post_doc in posts:
+            post_data = post_doc.to_dict()
+            author_id = post_data.get('author_id')
+            if author_id and author_id != 'anonymous':
+                unique_authors.add(author_id)
+        
+        active_members = len(unique_authors)
+        
+        return {
+            'total_posts': total_posts,
+            'active_members': active_members
+        }
+        
+    except Exception as e:
+        print(f"Error getting MindLink stats: {e}")
+        return {'total_posts': 0, 'active_members': 0}

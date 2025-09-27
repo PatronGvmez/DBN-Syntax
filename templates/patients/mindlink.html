@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% set active_page = "mindlink" %}
+
+{% block title %}MindLink - Community Support{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Hero Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-gradient" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <div class="card-body text-white py-5">
+                    <div class="text-center">
+                        <i class="fas fa-heart fa-3x mb-3" style="color: #fff;"></i>
+                        <h1 class="display-4 fw-bold mb-3">Welcome to MindLink</h1>
+                        <p class="lead mb-4">"You tell me your secret and I'll tell you mine"</p>
+                        <p class="fs-5 opacity-90">A safe space where patients support each other through shared experiences and understanding.</p>
+                        <div class="row justify-content-center mt-4">
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center bg-white bg-opacity-25 rounded-pill px-4 py-2">
+                                    <i class="fas fa-users me-2"></i>
+                                    <span>{{ active_members }} Active Members</span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center bg-white bg-opacity-25 rounded-pill px-4 py-2">
+                                    <i class="fas fa-comments me-2"></i>
+                                    <span>{{ total_posts }} Shared Stories</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Your Story Section -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-0 pb-0">
+                    <h4 class="card-title text-success mb-0">
+                        <i class="fas fa-edit me-2"></i>Share Your Story
+                    </h4>
+                    <p class="text-muted mb-0">Your experience can help others feel less alone. Every voice matters here.</p>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <textarea 
+                                name="content" 
+                                class="form-control border-success" 
+                                rows="4" 
+                                placeholder="Share what's on your mind... your struggles, victories, hopes, or just how you're feeling today. This community is here to listen and support you. 💚"
+                                required
+                                minlength="10"
+                                style="resize: vertical;"></textarea>
+                            <div class="form-text text-success">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                This is a safe, moderated space. Be kind, be honest, be yourself.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_anonymous" id="anonymous">
+                                <label class="form-check-label text-muted" for="anonymous">
+                                    <i class="fas fa-user-secret me-1"></i>
+                                    Share anonymously (your name won't be shown)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="fas fa-heart text-danger me-1"></i>
+                                Remember: You are not alone, you matter, and this community cares about you.
+                            </small>
+                            <button type="submit" class="btn btn-success btn-lg px-4">
+                                <i class="fas fa-paper-plane me-2"></i>Share with Community
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Community Guidelines -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-0 bg-light">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i class="fas fa-info-circle fa-2x text-info"></i>
+                    </div>
+                    <div class="col">
+                        <h5 class="alert-heading mb-2">Community Guidelines</h5>
+                        <p class="mb-0">
+                            <strong>Be Kind:</strong> Everyone here is on their own journey. 
+                            <strong>Be Supportive:</strong> Offer encouragement and understanding.
+                            <strong>Be Safe:</strong> If you or someone else is in immediate danger, please contact emergency services or your therapist immediately.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Community Posts -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="text-success mb-0">
+                    <i class="fas fa-comments me-2"></i>Community Stories
+                </h3>
+                <span class="badge bg-success fs-6 px-3 py-2">{{ posts|length }} Recent Posts</span>
+            </div>
+
+            {% if posts %}
+                <div class="row">
+                    {% for post in posts %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="d-flex align-items-center">
+                                        {% if post.is_anonymous %}
+                                            <div class="avatar-circle bg-secondary me-3">
+                                                <i class="fas fa-user-secret text-white"></i>
+                                            </div>
+                                        {% else %}
+                                            <div class="avatar-circle bg-success me-3">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">{{ post.author_name }}</h6>
+                                            <small class="text-muted">{{ post.created_at_readable }}</small>
+                                        </div>
+                                    </div>
+                                    {% if post.support_count > 0 %}
+                                    <span class="badge bg-success rounded-pill">
+                                        <i class="fas fa-heart me-1"></i>{{ post.support_count }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <p class="card-text">{{ post.content }}</p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                    <form method="POST" action="{{ url_for('patients.support_post', post_id=post.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-heart me-1"></i>Send Support
+                                        </button>
+                                    </form>
+                                    <small class="text-muted">
+                                        <i class="fas fa-shield-alt me-1"></i>Safe Space
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                {% if posts|length >= 20 %}
+                <div class="text-center mt-4">
+                    <p class="text-muted">Showing the 20 most recent posts. Older posts are archived to keep the community current.</p>
+                </div>
+                {% endif %}
+                
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body py-5">
+                            <i class="fas fa-comments fa-4x text-muted mb-4"></i>
+                            <h4 class="text-muted mb-3">Be the First to Share</h4>
+                            <p class="text-muted mb-4">
+                                This community is waiting for someone like you to start the conversation. 
+                                Your story could be exactly what someone else needs to hear today.
+                            </p>
+                            <a href="#" class="btn btn-success btn-lg" onclick="document.querySelector('textarea[name=content]').focus(); return false;">
+                                <i class="fas fa-pencil-alt me-2"></i>Share Your Story
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Emergency Resources -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-danger bg-light">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-danger mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Need Immediate Help?
+                    </h5>
+                    <p class="mb-3">If you're in crisis or thinking of harming yourself, please reach out immediately:</p>
+                    <div class="row justify-content-center">
+                        <div class="col-md-4 mb-2">
+                            <a href="tel:988" class="btn btn-danger btn-sm w-100">
+                                <i class="fas fa-phone me-2"></i>Crisis Lifeline: 988
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <a href="tel:911" class="btn btn-warning btn-sm w-100">
+                                <i class="fas fa-ambulance me-2"></i>Emergency: 911
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <button class="btn btn-info btn-sm w-100" onclick="alert('Please contact your assigned therapist through your dashboard or call the main clinic number.')">
+                                <i class="fas fa-user-md me-2"></i>Your Therapist
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.bg-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+</style>
+{% endblock %}

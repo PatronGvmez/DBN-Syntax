@@ -79,6 +79,123 @@ def dashboard():
                           progress_updates=progress_updates,
                           now=datetime.now())
 
+@patients_bp.route('/mindlink', methods=['GET', 'POST'])
+@login_required
+def mindlink():
+    """MindLink Community Forum - A safe space for patients to share and support each other."""
+    user = get_current_user()
+    
+    # Only patients can access MindLink
+    if user.get('role') != 'patient':
+        flash('MindLink is exclusively for patients. Please contact your therapist for support.', 'info')
+        return redirect(url_for('home'))
+    
+    from models import get_db
+    from datetime import datetime
+    import firebase_admin
+    from firebase_admin import firestore
+    
+    db = get_db()
+    
+    # Handle new post submission
+    if request.method == 'POST':
+        content = request.form.get('content', '').strip()
+        is_anonymous = request.form.get('is_anonymous') == 'on'
+        
+        if not content:
+            flash('Please share something with the community', 'warning')
+        elif len(content) < 10:
+            flash('Please share a bit more to help others connect with your experience', 'warning')
+        else:
+            try:
+                # Create new forum post
+                post_data = {
+                    'content': content,
+                    'author_id': user.get('id') if not is_anonymous else 'anonymous',
+                    'author_name': user.get('name') if not is_anonymous else 'Anonymous Friend',
+                    'is_anonymous': is_anonymous,
+                    'created_at': firestore.SERVER_TIMESTAMP,
+                    'likes': 0,
+                    'support_count': 0,
+                    'type': 'mindlink_post'
+                }
+                
+                db.collection('mindlink_posts').add(post_data)
+                flash('Thank you for sharing! Your voice matters and helps others feel less alone. 💚', 'success')
+                
+            except Exception as e:
+                flash('Something went wrong sharing your post. Please try again.', 'danger')
+                print(f"Error creating MindLink post: {e}")
+    
+    # Get all forum posts (most recent first)
+    try:
+        posts_ref = db.collection('mindlink_posts').order_by('created_at', direction=firestore.Query.DESCENDING).limit(20)
+        posts = []
+        
+        for post_doc in posts_ref.stream():
+            post_data = post_doc.to_dict()
+            post_data['id'] = post_doc.id
+            
+            # Convert timestamp to readable format
+            if 'created_at' in post_data and post_data['created_at']:
+                created_at = post_data['created_at']
+                if hasattr(created_at, 'timestamp'):
+                    post_data['created_at_readable'] = datetime.fromtimestamp(created_at.timestamp()).strftime('%B %d, %Y at %I:%M %p')
+                else:
+                    post_data['created_at_readable'] = 'Recently'
+            else:
+                post_data['created_at_readable'] = 'Recently'
+            
+            posts.append(post_data)
+            
+    except Exception as e:
+        posts = []
+        print(f"Error fetching MindLink posts: {e}")
+    
+    # Get community stats
+    try:
+        total_posts = len(list(db.collection('mindlink_posts').stream()))
+        active_members = len(set([post.get('author_id') for post in posts if post.get('author_id') != 'anonymous']))
+    except:
+        total_posts = 0
+        active_members = 0
+    
+    return render_template('patients/mindlink.html', 
+                          user=user,
+                          posts=posts,
+                          total_posts=total_posts,
+                          active_members=active_members,
+                          now=datetime.now())
+
+@patients_bp.route('/mindlink/support/<post_id>', methods=['POST'])
+@login_required
+def support_post(post_id):
+    """Add support to a MindLink post."""
+    user = get_current_user()
+    
+    if user.get('role') != 'patient':
+        return redirect(url_for('home'))
+    
+    try:
+        from models import get_db
+        from firebase_admin import firestore
+        
+        db = get_db()
+        post_ref = db.collection('mindlink_posts').document(post_id)
+        
+        # Increment support count
+        post_ref.update({
+            'support_count': firestore.Increment(1)
+        })
+        
+        flash('💚 Support sent! You\'re helping someone feel less alone today.', 'success')
+        
+    except Exception as e:
+        flash('Unable to send support right now. Please try again.', 'danger')
+        print(f"Error supporting post: {e}")
+    
+    return redirect(url_for('patients.mindlink'))
+
 @patients_bp.route('/view/<patient_id>')
 @login_required
 def view(patient_id):

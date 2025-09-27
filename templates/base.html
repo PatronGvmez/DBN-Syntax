@@ -38,12 +38,21 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin.patient_assignments') }}">Assignments</a>
                         </li>
-                    {% else %}
+                    {% elif user.role == 'therapist' %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('therapists.dashboard') }}">Dashboard</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('patients.index') }}">My Patients</a>
+                        </li>
+                    {% elif user.role == 'patient' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('patients.dashboard') }}">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('patients.mindlink') }}" style="color: #28a745; font-weight: 600;">
+                                <i class="bi bi-chat-heart me-1"></i>MindLink
+                            </a>
                         </li>
                     {% endif %}
                     <li class="nav-item">
