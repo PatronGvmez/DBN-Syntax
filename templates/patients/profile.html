@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">My Profile</h2>
+                <a href="{{ url_for('patients.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-person-heart text-white" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-1">{{ user.name }}</h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-person-heart me-1"></i>
+                            Patient
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <!-- Profile Completion Status for Patients -->
+                {% if profile_status %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="alert-heading mb-2">
+                                        <i class="bi bi-clipboard-check me-2"></i>Profile Completion
+                                    </h5>
+                                    <p class="mb-0">Complete your profile to help us provide better care.</p>
+                                </div>
+                                <div class="text-center">
+                                    <div class="progress mb-2" style="width: 150px;">
+                                        <div class="progress-bar bg-success" data-completion="{{ profile_status.completion_percentage }}" 
+                                             role="progressbar" aria-valuenow="{{ profile_status.completion_percentage }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ profile_status.completion_percentage }}% Complete</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-primary mb-2">
+                            <i class="bi bi-envelope me-2"></i>Contact Information
+                        </h4>
+                        <div class="mb-2">
+                            <strong>Email:</strong> {{ user.email }}
+                        </div>
+                        <div>
+                            <strong>Phone:</strong> {{ user.phone if user.phone else 'Not provided' }}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-primary mb-2">
+                            <i class="bi bi-calendar me-2"></i>Account Information
+                        </h4>
+                        <div class="mb-2">
+                            <strong>Role:</strong> {{ user.role.capitalize() }}
+                        </div>
+                        <div>
+                            <strong>Member Since:</strong> 
+                            {% if user.created_at %}
+                                {{ user.created_at.strftime('%B %d, %Y') if user.created_at.strftime else 'Unknown' }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comprehensive Patient Profile Information -->
+                {% if patient_profile %}
+                <hr class="my-4">
+                
+                <!-- Personal Information -->
+                {% if patient_profile.personal_info %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h4 class="text-primary mb-3">
+                            <i class="bi bi-person me-2"></i>Personal Information
+                        </h4>
+                        <div class="row">
+                            {% if patient_profile.personal_info.date_of_birth %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Date of Birth:</strong> {{ patient_profile.personal_info.date_of_birth }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.personal_info.gender %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Gender:</strong> {{ patient_profile.personal_info.gender.title() }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.personal_info.phone %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Personal Phone:</strong> {{ patient_profile.personal_info.phone }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.personal_info.address %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Address:</strong> {{ patient_profile.personal_info.address }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.personal_info.emergency_contact_name %}
+                            <div class="col-md-4 mb-3">
+                                <strong>Emergency Contact:</strong> {{ patient_profile.personal_info.emergency_contact_name }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.personal_info.emergency_contact_phone %}
+                            <div class="col-md-4 mb-3">
+                                <strong>Emergency Phone:</strong> {{ patient_profile.personal_info.emergency_contact_phone }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.personal_info.emergency_contact_relationship %}
+                            <div class="col-md-4 mb-3">
+                                <strong>Relationship:</strong> {{ patient_profile.personal_info.emergency_contact_relationship }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Medical Information -->
+                {% if patient_profile.medical_info %}
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="text-danger mb-3">
+                            <i class="bi bi-heart-pulse me-2"></i>Medical Information
+                        </h4>
+                        <div class="row">
+                            {% if patient_profile.medical_info.primary_physician %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Primary Physician:</strong> {{ patient_profile.medical_info.primary_physician }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.medical_info.insurance_provider %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Insurance Provider:</strong> {{ patient_profile.medical_info.insurance_provider }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.medical_info.insurance_id %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Insurance ID:</strong> {{ patient_profile.medical_info.insurance_id }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.medical_info.allergies %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Allergies:</strong> {{ patient_profile.medical_info.allergies }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.medical_info.current_medications %}
+                            <div class="col-12 mb-3">
+                                <strong>Current Medications:</strong><br>
+                                <span class="text-muted">{{ patient_profile.medical_info.current_medications }}</span>
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.medical_info.medical_history %}
+                            <div class="col-12 mb-3">
+                                <strong>Medical History:</strong><br>
+                                <span class="text-muted">{{ patient_profile.medical_info.medical_history }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Mental Health Information -->
+                {% if patient_profile.mental_health %}
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="text-success mb-3">
+                            <i class="bi bi-brain me-2"></i>Mental Health Information
+                        </h4>
+                        <div class="row">
+                            {% if patient_profile.mental_health.mental_health_history %}
+                            <div class="col-12 mb-3">
+                                <strong>Mental Health History:</strong><br>
+                                <span class="text-muted">{{ patient_profile.mental_health.mental_health_history }}</span>
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.mental_health.current_symptoms %}
+                            <div class="col-12 mb-3">
+                                <strong>Current Symptoms:</strong><br>
+                                <span class="text-muted">{{ patient_profile.mental_health.current_symptoms }}</span>
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.mental_health.therapy_goals %}
+                            <div class="col-12 mb-3">
+                                <strong>Therapy Goals:</strong><br>
+                                <span class="text-muted">{{ patient_profile.mental_health.therapy_goals }}</span>
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.mental_health.previous_therapy %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Previous Therapy:</strong> {{ patient_profile.mental_health.previous_therapy }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.mental_health.support_system %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Support System:</strong> {{ patient_profile.mental_health.support_system }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Lifestyle Information -->
+                {% if patient_profile.lifestyle %}
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="text-info mb-3">
+                            <i class="bi bi-house me-2"></i>Lifestyle Information
+                        </h4>
+                        <div class="row">
+                            {% if patient_profile.lifestyle.occupation %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Occupation:</strong> {{ patient_profile.lifestyle.occupation }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.lifestyle.education_level %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Education Level:</strong> {{ patient_profile.lifestyle.education_level }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.lifestyle.marital_status %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Marital Status:</strong> {{ patient_profile.lifestyle.marital_status }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.lifestyle.living_situation %}
+                            <div class="col-md-6 mb-3">
+                                <strong>Living Situation:</strong> {{ patient_profile.lifestyle.living_situation }}
+                            </div>
+                            {% endif %}
+                            {% if patient_profile.lifestyle.substance_use %}
+                            <div class="col-12 mb-3">
+                                <strong>Substance Use History:</strong><br>
+                                <span class="text-muted">{{ patient_profile.lifestyle.substance_use }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Profile Update Information -->
+                {% if patient_profile.last_updated %}
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12 text-muted">
+                        <small>
+                            <i class="bi bi-clock me-1"></i>
+                            Profile last updated: {{ patient_profile.last_updated.strftime('%B %d, %Y at %I:%M %p') if patient_profile.last_updated.strftime else 'Recently' }}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <!-- No profile data yet -->
+                <hr class="my-4">
+                <div class="alert alert-warning text-center">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Profile Incomplete</strong><br>
+                    Complete your profile to get personalized care recommendations.
+                    <br><br>
+                    <a href="{{ url_for('patients.complete_profile') }}" class="btn btn-primary">
+                        <i class="bi bi-clipboard-check me-2"></i>Complete Profile
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set progress bar widths dynamically for patient profiles
+    document.querySelectorAll('.progress-bar[data-completion]').forEach(function(progressBar) {
+        const completion = progressBar.getAttribute('data-completion');
+        progressBar.style.width = completion + '%';
+    });
+});
+</script>
+
+{% endblock %}

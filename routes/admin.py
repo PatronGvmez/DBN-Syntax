@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from routes.auth import login_required, admin_required, get_current_user
-from models import create_user, get_patients, get_user
+from models import create_user, get_patients, get_user, update_user
 
 # Initialize admin blueprint
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -156,3 +156,81 @@ def unassign_patient(patient_id, therapist_id):
         flash(f'Error unassigning therapist: {str(e)}', 'danger')
     
     return redirect(url_for('admin.patient_assignments'))
+
+@admin_bp.route('/assignment-requests')
+@login_required
+@admin_required
+def assignment_requests():
+    """View and manage patient assignment requests."""
+    from models import get_pending_assignment_requests, get_users_by_role
+    
+    # Get pending requests
+    pending_requests = get_pending_assignment_requests()
+    
+    # Get available therapists
+    therapists = get_users_by_role('therapist')
+    
+    return render_template('admin/assignment_requests.html', 
+                          pending_requests=pending_requests,
+                          therapists=therapists)
+
+@admin_bp.route('/approve-assignment/<request_id>/<therapist_id>')
+@login_required
+@admin_required
+def approve_assignment(request_id, therapist_id):
+    """Approve a patient assignment request."""
+    try:
+        from models import approve_patient_assignment_request
+        
+        success = approve_patient_assignment_request(request_id, therapist_id)
+        
+        if success:
+            flash('Patient assignment approved successfully', 'success')
+        else:
+            flash('Failed to approve assignment', 'danger')
+            
+    except Exception as e:
+        flash(f'Error approving assignment: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.assignment_requests'))
+
+@admin_bp.route('/profile')
+@login_required
+@admin_required
+def profile():
+    """Display admin profile."""
+    user = get_current_user()
+    return render_template('admin/profile.html', user=user)
+
+@admin_bp.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_profile():
+    """Edit admin profile."""
+    user = get_current_user()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone', '')
+        
+        if not name:
+            flash('Name is required', 'danger')
+            return render_template('admin/edit_profile.html', user=user)
+            
+        try:
+            # Update user in Firestore
+            user_id = update_user(session['user_id'], {
+                'name': name,
+                'phone': phone
+            })
+            
+            if user_id:
+                flash('Profile updated successfully', 'success')
+                return redirect(url_for('admin.profile'))
+            else:
+                flash('Failed to update profile: User not found', 'danger')
+            
+        except Exception as e:
+            flash(f'Failed to update profile: {str(e)}', 'danger')
+    
+    return render_template('admin/edit_profile.html', user=user)

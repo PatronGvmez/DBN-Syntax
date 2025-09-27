@@ -174,36 +174,33 @@ def logout():
 @auth_bp.route('/profile')
 @login_required
 def profile():
+    """Redirect to role-specific profile page."""
     user = get_current_user()
-    return render_template('auth/profile.html', user=user)
+    role = user.get('role')
+    
+    if role == 'admin':
+        return redirect(url_for('admin.profile'))
+    elif role == 'therapist':
+        return redirect(url_for('therapists.profile'))
+    elif role == 'patient':
+        return redirect(url_for('patients.profile'))
+    else:
+        flash('Unknown user role', 'danger')
+        return redirect(url_for('home'))
 
-@auth_bp.route('/profile/edit', methods=['GET', 'POST'])
+@auth_bp.route('/profile/edit')
 @login_required
 def edit_profile():
+    """Redirect to role-specific edit profile page."""
     user = get_current_user()
+    role = user.get('role')
     
-    if request.method == 'POST':
-        name = request.form.get('name')
-        phone = request.form.get('phone', '')
-        
-        if not name:
-            flash('Name is required', 'danger')
-            return render_template('auth/edit_profile.html', user=user)
-            
-        try:
-            # Update user in Firestore using the new update_user function
-            user_id = update_user(session['user_id'], {
-                'name': name,
-                'phone': phone
-            })
-            
-            if user_id:
-                flash('Profile updated successfully', 'success')
-                return redirect(url_for('auth.profile'))
-            else:
-                flash('Failed to update profile: User not found', 'danger')
-            
-        except Exception as e:
-            flash(f'Failed to update profile: {str(e)}', 'danger')
-    
-    return render_template('auth/edit_profile.html', user=user)
+    if role == 'admin':
+        return redirect(url_for('admin.edit_profile'))
+    elif role == 'therapist':
+        return redirect(url_for('therapists.edit_profile'))
+    elif role == 'patient':
+        return redirect(url_for('patients.edit_profile'))
+    else:
+        flash('Unknown user role', 'danger')
+        return redirect(url_for('home'))

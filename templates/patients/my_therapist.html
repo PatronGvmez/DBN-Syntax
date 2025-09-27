@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% set active_page = "my_therapist" %}
+
+{% block title %}My Therapist - Assignment & Information{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-info text-white">
+                <div class="card-body py-4">
+                    <div class="text-center">
+                        <i class="bi bi-person-badge fa-3x mb-3"></i>
+                        <h1 class="display-5 fw-bold mb-2">My Therapist</h1>
+                        <p class="lead mb-0">Your personalized therapy assignment and information</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if assigned_therapist %}
+        <!-- Assigned Therapist Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-check-circle me-2"></i>Your Assigned Therapist
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 text-center">
+                                <div class="avatar-circle bg-success text-white mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h3 class="text-success mb-2">{{ assigned_therapist.therapist.name }}</h3>
+                                <p class="mb-1">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    <strong>Email:</strong> {{ assigned_therapist.therapist.email }}
+                                </p>
+                                {% if assigned_therapist.therapist.phone %}
+                                <p class="mb-1">
+                                    <i class="bi bi-telephone me-2"></i>
+                                    <strong>Phone:</strong> {{ assigned_therapist.therapist.phone }}
+                                </p>
+                                {% endif %}
+                                {% if assigned_therapist.assigned_at %}
+                                <p class="text-muted mb-0">
+                                    <i class="bi bi-calendar me-2"></i>
+                                    <strong>Assigned:</strong> {{ assigned_therapist.assigned_at.strftime('%B %d, %Y') if assigned_therapist.assigned_at else 'Recently' }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="d-grid gap-2">
+                                    <a href="mailto:{{ assigned_therapist.therapist.email }}" class="btn btn-success">
+                                        <i class="bi bi-envelope-fill me-2"></i>Send Email
+                                    </a>
+                                    {% if assigned_therapist.therapist.phone %}
+                                    <a href="tel:{{ assigned_therapist.therapist.phone }}" class="btn btn-outline-success">
+                                        <i class="bi bi-telephone-fill me-2"></i>Call Therapist
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Therapy Resources Section -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-check me-2"></i>Session Planning
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Coordinate your therapy sessions and track your progress.</p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="bi bi-arrow-right text-info me-2"></i>Schedule appointments</li>
+                            <li class="mb-2"><i class="bi bi-arrow-right text-info me-2"></i>Track session notes</li>
+                            <li class="mb-2"><i class="bi bi-arrow-right text-info me-2"></i>Monitor your progress</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-people me-2"></i>Support Network
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Connect with additional support resources.</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('patients.mindlink') }}" class="btn btn-outline-success">
+                                <i class="bi bi-chat-heart me-2"></i>Join MindLink Community
+                            </a>
+                            <button class="btn btn-outline-info" onclick="alert('Crisis support: Call 988 for immediate help')">
+                                <i class="bi bi-shield-check me-2"></i>Crisis Resources
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% elif assignment_request and assignment_request.status == 'pending' %}
+        <!-- Pending Assignment Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="mb-0">
+                            <i class="bi bi-hourglass-split me-2"></i>Assignment In Progress
+                        </h4>
+                    </div>
+                    <div class="card-body text-center py-5">
+                        <div class="spinner-border text-warning mb-4" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h3 class="text-warning mb-3">Please wait to be assigned to a therapist</h3>
+                        <p class="lead mb-4">
+                            Your request is being reviewed by our administrators. You will be assigned to a suitable therapist based on your needs and preferences.
+                        </p>
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">What happens next?</h6>
+                                    <ul class="mb-0 text-start">
+                                        <li>Our team reviews your assignment request</li>
+                                        <li>We match you with a qualified therapist</li>
+                                        <li>You'll receive notification when assigned</li>
+                                        <li>You'll then have access to your therapist's information</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            <strong>Request submitted:</strong> {{ assignment_request.created_at.strftime('%B %d, %Y at %I:%M %p') if assignment_request.created_at else 'Recently' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- While You Wait Section -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-chat-heart me-2"></i>Join Our Community
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>While waiting for your therapist assignment, connect with other patients in our supportive community.</p>
+                        <a href="{{ url_for('patients.mindlink') }}" class="btn btn-success">
+                            <i class="bi bi-arrow-right-circle me-2"></i>Visit MindLink
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-shield-check me-2"></i>Crisis Support
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>If you need immediate help, don't wait for assignment. Contact crisis support right away.</p>
+                        <div class="d-grid gap-2">
+                            <a href="tel:988" class="btn btn-danger">
+                                <i class="bi bi-telephone-fill me-2"></i>Crisis Lifeline: 988
+                            </a>
+                            <a href="tel:911" class="btn btn-warning">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Emergency: 911
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Assignment Request Form -->
+        <div class="row mb-4">
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="bi bi-file-earmark-person me-2"></i>Therapist Assignment Request
+                        </h4>
+                        <p class="text-muted mb-0 mt-2">Help us find the perfect therapist for your needs by providing some information about yourself.</p>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <!-- Basic Information -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-primary border-bottom pb-2 mb-3">
+                                        <i class="bi bi-person me-2"></i>Basic Information
+                                    </h5>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="age" class="form-label">Age *</label>
+                                    <input type="number" class="form-control" id="age" name="age" required min="1" max="120">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label">Gender *</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="">Select gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Non-binary">Non-binary</option>
+                                        <option value="Prefer not to say">Prefer not to say</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Medical Information -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-primary border-bottom pb-2 mb-3">
+                                        <i class="bi bi-heart-pulse me-2"></i>Medical & Mental Health Information
+                                    </h5>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="medical_condition" class="form-label">Primary concern or condition *</label>
+                                    <textarea class="form-control" id="medical_condition" name="medical_condition" rows="3" required 
+                                              placeholder="Please describe your primary mental health concern or condition you'd like help with..."></textarea>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="severity" class="form-label">Severity Level *</label>
+                                    <select class="form-select" id="severity" name="severity" required>
+                                        <option value="">Select severity</option>
+                                        <option value="Mild">Mild - Manageable but noticeable</option>
+                                        <option value="Moderate">Moderate - Interferes with daily life</option>
+                                        <option value="Severe">Severe - Significantly impacts functioning</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="previous_therapy" class="form-label">Previous therapy experience</label>
+                                    <select class="form-select" id="previous_therapy" name="previous_therapy">
+                                        <option value="">Select option</option>
+                                        <option value="None">No previous therapy</option>
+                                        <option value="Some">Some therapy experience</option>
+                                        <option value="Extensive">Extensive therapy history</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Therapy Preferences -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-primary border-bottom pb-2 mb-3">
+                                        <i class="bi bi-gear me-2"></i>Therapy Preferences
+                                    </h5>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="therapy_type_preference" class="form-label">Preferred therapy type *</label>
+                                    <select class="form-select" id="therapy_type_preference" name="therapy_type_preference" required>
+                                        <option value="">Select therapy type</option>
+                                        <option value="CBT">Cognitive Behavioral Therapy (CBT)</option>
+                                        <option value="DBT">Dialectical Behavior Therapy (DBT)</option>
+                                        <option value="Psychodynamic">Psychodynamic Therapy</option>
+                                        <option value="Humanistic">Humanistic/Person-Centered</option>
+                                        <option value="No preference">No preference</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="communication_preference" class="form-label">Communication preference</label>
+                                    <select class="form-select" id="communication_preference" name="communication_preference">
+                                        <option value="">Select preference</option>
+                                        <option value="In-person">In-person sessions</option>
+                                        <option value="Video call">Video call sessions</option>
+                                        <option value="Phone">Phone sessions</option>
+                                        <option value="Mixed">Mixed (flexible)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="availability" class="form-label">Preferred availability</label>
+                                    <textarea class="form-control" id="availability" name="availability" rows="2" 
+                                              placeholder="E.g., Weekday evenings, Saturday mornings, flexible schedule..."></textarea>
+                                </div>
+                            </div>
+
+                            <!-- Goals and Additional Information -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-primary border-bottom pb-2 mb-3">
+                                        <i class="bi bi-target me-2"></i>Goals & Additional Information
+                                    </h5>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="goals" class="form-label">What do you hope to achieve through therapy?</label>
+                                    <textarea class="form-control" id="goals" name="goals" rows="3" 
+                                              placeholder="Describe your goals and what you hope to accomplish..."></textarea>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="special_requirements" class="form-label">Special requirements or considerations</label>
+                                    <textarea class="form-control" id="special_requirements" name="special_requirements" rows="2" 
+                                              placeholder="Any special needs, accessibility requirements, or other considerations..."></textarea>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label for="emergency_contact" class="form-label">Emergency contact information</label>
+                                    <input type="text" class="form-control" id="emergency_contact" name="emergency_contact" 
+                                           placeholder="Name and phone number of emergency contact">
+                                </div>
+                            </div>
+
+                            <!-- Submit Section -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6 class="alert-heading">
+                                            <i class="bi bi-info-circle me-2"></i>What happens after submission?
+                                        </h6>
+                                        <p class="mb-0">
+                                            Your information will be reviewed by our administrators who will match you with a qualified therapist based on your needs, preferences, and availability. You'll be notified once the assignment is made.
+                                        </p>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-send me-2"></i>Submit Assignment Request
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.avatar-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.spinner-border {
+    animation: spinner-border .75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

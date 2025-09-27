@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session, jsonify
 from routes.auth import login_required, therapist_required, get_current_user
 from models import (get_patient, get_patients, create_patient, update_patient, 
-                    get_patient_progress, add_progress_update, get_patient_therapists)
+                    get_patient_progress, add_progress_update, get_patient_therapists, update_user)
 
 # Initialize patients blueprint
 patients_bp = Blueprint('patients', __name__, url_prefix='/patients')
@@ -72,11 +72,16 @@ def dashboard():
     progress_updates.sort(key=lambda x: x.get('date', ''), reverse=True)
     progress_updates = progress_updates[:5]  # Show only recent 5
     
+    # Check profile completion status
+    from models import get_patient_profile_completion
+    profile_status = get_patient_profile_completion(user.get('id'))
+    
     from datetime import datetime
     return render_template('patients/dashboard.html', 
                           user=user,
                           patient_records=patient_records,
                           progress_updates=progress_updates,
+                          profile_status=profile_status,
                           now=datetime.now())
 
 @patients_bp.route('/mindlink', methods=['GET', 'POST'])
@@ -195,6 +200,219 @@ def support_post(post_id):
         print(f"Error supporting post: {e}")
     
     return redirect(url_for('patients.mindlink'))
+
+@patients_bp.route('/my-therapist', methods=['GET', 'POST'])
+@login_required
+def my_therapist():
+    """Patient therapist assignment and information page."""
+    user = get_current_user()
+    
+    # Only patients can access this page
+    if user.get('role') != 'patient':
+        flash('This page is for patients only.', 'warning')
+        return redirect(url_for('home'))
+    
+    from models import (get_patient_assignment_request, create_patient_assignment_request, 
+                       get_patient_assigned_therapist)
+    
+    patient_id = user.get('id')
+    
+    # Check if patient already has an assignment request or assigned therapist
+    assignment_request = get_patient_assignment_request(patient_id)
+    assigned_therapist = get_patient_assigned_therapist(patient_id)
+    
+    # Handle form submission for new assignment request
+    if request.method == 'POST':
+        # Only allow form submission if no active request exists
+        if assignment_request and assignment_request.get('status') in ['pending', 'approved']:
+            flash('You already have an active assignment request.', 'info')
+            return redirect(url_for('patients.my_therapist'))
+        
+        # Get form data
+        age = request.form.get('age', '')
+        gender = request.form.get('gender', '')
+        medical_condition = request.form.get('medical_condition', '')
+        severity = request.form.get('severity', '')
+        therapy_type_preference = request.form.get('therapy_type_preference', '')
+        previous_therapy = request.form.get('previous_therapy', '')
+        communication_preference = request.form.get('communication_preference', '')
+        availability = request.form.get('availability', '')
+        special_requirements = request.form.get('special_requirements', '')
+        goals = request.form.get('goals', '')
+        emergency_contact = request.form.get('emergency_contact', '')
+        
+        # Basic validation
+        if not all([age, gender, medical_condition, severity, therapy_type_preference]):
+            flash('Please fill in all required fields.', 'danger')
+            return render_template('patients/my_therapist.html', 
+                                 user=user,
+                                 assignment_request=assignment_request,
+                                 assigned_therapist=assigned_therapist)
+        
+        try:
+            # Create patient info object
+            patient_info = {
+                'age': int(age) if age.isdigit() else 0,
+                'gender': gender,
+                'medical_condition': medical_condition,
+                'severity': severity,
+                'therapy_type_preference': therapy_type_preference,
+                'previous_therapy': previous_therapy,
+                'communication_preference': communication_preference,
+                'availability': availability,
+                'special_requirements': special_requirements,
+                'goals': goals,
+                'emergency_contact': emergency_contact,
+                'submitted_by': user.get('name'),
+                'submitted_email': user.get('email')
+            }
+            
+            # Create assignment request
+            request_id = create_patient_assignment_request(patient_id, patient_info)
+            
+            if request_id:
+                flash('Your therapist assignment request has been submitted successfully! Please wait for an administrator to review and assign you to a suitable therapist.', 'success')
+                return redirect(url_for('patients.my_therapist'))
+            else:
+                flash('Failed to submit assignment request. You may already have an active request.', 'danger')
+                
+        except ValueError:
+            flash('Please enter a valid age.', 'danger')
+        except Exception as e:
+            flash('An error occurred while submitting your request. Please try again.', 'danger')
+            print(f"Error creating assignment request: {e}")
+    
+    # Refresh assignment request after potential creation
+    assignment_request = get_patient_assignment_request(patient_id)
+    
+    return render_template('patients/my_therapist.html', 
+                          user=user,
+                          assignment_request=assignment_request,
+                          assigned_therapist=assigned_therapist)
+
+@patients_bp.route('/complete-profile', methods=['GET', 'POST'])
+@login_required
+def complete_profile():
+    """Handle patient profile completion."""
+    user = get_current_user()
+    
+    # Only patients can access this
+    if user.get('role') != 'patient':
+        flash('This page is for patients only.', 'warning')
+        return redirect(url_for('home'))
+    
+    from models import update_patient_profile, get_patient_full_profile, get_patient_profile_completion
+    
+    if request.method == 'POST':
+        try:
+            # Get save type (partial or complete)
+            save_type = request.form.get('save_type', 'complete')
+            # Get user ID from session (more reliable than user object)
+            user_id = session.get('user_id')
+            
+            # Organize form data by categories
+            profile_data = {
+                'personal_info': {
+                    'date_of_birth': request.form.get('date_of_birth', ''),
+                    'gender': request.form.get('gender', ''),
+                    'phone': request.form.get('phone', ''),
+                    'address': request.form.get('address', ''),
+                    'emergency_contact_name': request.form.get('emergency_contact_name', ''),
+                    'emergency_contact_phone': request.form.get('emergency_contact_phone', ''),
+                    'emergency_contact_relationship': request.form.get('emergency_contact_relationship', '')
+                },
+                'medical_info': {
+                    'primary_physician': request.form.get('primary_physician', ''),
+                    'insurance_provider': request.form.get('insurance_provider', ''),
+                    'insurance_id': request.form.get('insurance_id', ''),
+                    'allergies': request.form.get('allergies', ''),
+                    'current_medications': request.form.get('current_medications', ''),
+                    'medical_history': request.form.get('medical_history', '')
+                },
+                'mental_health': {
+                    'mental_health_history': request.form.get('mental_health_history', ''),
+                    'current_symptoms': request.form.get('current_symptoms', ''),
+                    'therapy_goals': request.form.get('therapy_goals', ''),
+                    'previous_therapy': request.form.get('previous_therapy', ''),
+                    'support_system': request.form.get('support_system', '')
+                },
+                'lifestyle': {
+                    'occupation': request.form.get('occupation', ''),
+                    'education_level': request.form.get('education_level', ''),
+                    'marital_status': request.form.get('marital_status', ''),
+                    'living_situation': request.form.get('living_situation', ''),
+                    'substance_use': request.form.get('substance_use', '')
+                }
+            }
+            
+            # Update profile
+            success = update_patient_profile(user_id, profile_data)
+            
+            if success:
+                # Get updated completion status
+                profile_status = get_patient_profile_completion(user_id)
+                completion_percentage = profile_status.completion_percentage if profile_status else 0
+                
+                if save_type == 'partial':
+                    # Return JSON response for partial saves
+                    return jsonify({
+                        'success': True,
+                        'message': 'Progress saved successfully! You can continue filling out your profile later.',
+                        'completion_percentage': completion_percentage
+                    })
+                else:
+                    # Complete save - validate required fields
+                    required_fields = ['date_of_birth', 'gender', 'phone']
+                    missing_fields = []
+                    
+                    for field in required_fields:
+                        if not request.form.get(field, '').strip():
+                            missing_fields.append(field.replace('_', ' ').title())
+                    
+                    if missing_fields:
+                        return jsonify({
+                            'success': False,
+                            'message': f'Please fill in required fields: {", ".join(missing_fields)}'
+                        })
+                    
+                    # Complete profile submission
+                    flash('Profile completed successfully! Thank you for providing your information.', 'success')
+                    return redirect(url_for('patients.dashboard'))
+            else:
+                if save_type == 'partial':
+                    return jsonify({
+                        'success': False,
+                        'message': 'Failed to save progress. Please try again.'
+                    })
+                else:
+                    flash('Failed to update profile. Please try again.', 'danger')
+                
+        except Exception as e:
+            print(f"Error updating profile: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            if request.form.get('save_type') == 'partial':
+                return jsonify({
+                    'success': False,
+                    'message': f'An error occurred while saving progress: {str(e)}'
+                })
+            else:
+                flash(f'An error occurred while updating your profile: {str(e)}', 'danger')
+    
+    # Get user ID from session 
+    user_id = session.get('user_id')
+    
+    # Get current profile data for form
+    current_profile = get_patient_full_profile(user_id)
+    
+    # Get profile completion status
+    profile_status = get_patient_profile_completion(user_id)
+    
+    return render_template('patients/complete_profile.html', 
+                          user=user,
+                          current_profile=current_profile,
+                          profile_status=profile_status)
 
 @patients_bp.route('/view/<patient_id>')
 @login_required
@@ -382,3 +600,61 @@ def add_progress(patient_id):
             flash(f'Error adding progress update: {str(e)}', 'danger')
     
     return render_template('patients/add_progress.html', patient=patient)
+
+@patients_bp.route('/profile')
+@login_required
+def profile():
+    """Display patient profile."""
+    user = get_current_user()
+    
+    # Only patients can access their own profile
+    if user.get('role') != 'patient':
+        flash('Access denied: This is a patient-only area', 'danger')
+        return redirect(url_for('home'))
+    
+    # Get patient profile data
+    from models import get_patient_full_profile, get_patient_profile_completion
+    patient_profile = get_patient_full_profile(user.get('id'))
+    profile_status = get_patient_profile_completion(user.get('id'))
+    
+    return render_template('patients/profile.html', 
+                          user=user, 
+                          patient_profile=patient_profile,
+                          profile_status=profile_status)
+
+@patients_bp.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    """Edit patient profile."""
+    user = get_current_user()
+    
+    # Only patients can access their own profile
+    if user.get('role') != 'patient':
+        flash('Access denied: This is a patient-only area', 'danger')
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone', '')
+        
+        if not name:
+            flash('Name is required', 'danger')
+            return render_template('patients/edit_profile.html', user=user)
+            
+        try:
+            # Update user in Firestore
+            user_id = update_user(session['user_id'], {
+                'name': name,
+                'phone': phone
+            })
+            
+            if user_id:
+                flash('Profile updated successfully', 'success')
+                return redirect(url_for('patients.profile'))
+            else:
+                flash('Failed to update profile: User not found', 'danger')
+            
+        except Exception as e:
+            flash(f'Failed to update profile: {str(e)}', 'danger')
+    
+    return render_template('patients/edit_profile.html', user=user)

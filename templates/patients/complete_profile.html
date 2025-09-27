@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% set active_page = "complete_profile" %}
+
+{% block title %}Complete Your Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body py-4">
+                    <div class="text-center">
+                        <i class="bi bi-person-circle fa-3x mb-3"></i>
+                        <h1 class="display-5 fw-bold mb-2">Complete Your Profile</h1>
+                        <p class="lead mb-0">Help us provide you with the best personalized care</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="text-primary">Profile Completion Progress</h5>
+                            <div class="progress mb-2" style="height: 10px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     data-completion="{{ profile_status.completion_percentage if profile_status else 0 }}" 
+                                     aria-valuenow="{{ profile_status.completion_percentage if profile_status else 0 }}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="text-muted mb-0">
+                                Complete all sections below to help us match you with the right therapist and provide optimal care.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="badge bg-primary fs-4 px-3 py-2">
+                                {{ profile_status.completion_percentage if profile_status else 0 }}% Complete
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Form -->
+    <form method="POST" id="profileForm">
+        
+        <!-- Personal Information Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person me-2 text-primary"></i>Personal Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ current_profile.personal_info.date_of_birth if current_profile else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender">
+                                    <option value="">Select gender</option>
+                                    <option value="Male" {{ 'selected' if current_profile and current_profile.personal_info.gender == 'Male' else '' }}>Male</option>
+                                    <option value="Female" {{ 'selected' if current_profile and current_profile.personal_info.gender == 'Female' else '' }}>Female</option>
+                                    <option value="Non-binary" {{ 'selected' if current_profile and current_profile.personal_info.gender == 'Non-binary' else '' }}>Non-binary</option>
+                                    <option value="Prefer not to say" {{ 'selected' if current_profile and current_profile.personal_info.gender == 'Prefer not to say' else '' }}>Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ current_profile.personal_info.phone if current_profile else '' }}"
+                                       placeholder="(555) 123-4567">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="2" 
+                                          placeholder="Street address, City, State, ZIP">{{ current_profile.personal_info.address if current_profile else '' }}</textarea>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="emergency_contact_name" class="form-label">Emergency Contact Name</label>
+                                <input type="text" class="form-control" id="emergency_contact_name" name="emergency_contact_name" 
+                                       value="{{ current_profile.personal_info.emergency_contact_name if current_profile else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="emergency_contact_phone" class="form-label">Emergency Contact Phone</label>
+                                <input type="tel" class="form-control" id="emergency_contact_phone" name="emergency_contact_phone" 
+                                       value="{{ current_profile.personal_info.emergency_contact_phone if current_profile else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="emergency_contact_relationship" class="form-label">Relationship</label>
+                                <select class="form-select" id="emergency_contact_relationship" name="emergency_contact_relationship">
+                                    <option value="">Select relationship</option>
+                                    <option value="Spouse" {{ 'selected' if current_profile and current_profile.personal_info.emergency_contact_relationship == 'Spouse' else '' }}>Spouse</option>
+                                    <option value="Parent" {{ 'selected' if current_profile and current_profile.personal_info.emergency_contact_relationship == 'Parent' else '' }}>Parent</option>
+                                    <option value="Sibling" {{ 'selected' if current_profile and current_profile.personal_info.emergency_contact_relationship == 'Sibling' else '' }}>Sibling</option>
+                                    <option value="Child" {{ 'selected' if current_profile and current_profile.personal_info.emergency_contact_relationship == 'Child' else '' }}>Child</option>
+                                    <option value="Friend" {{ 'selected' if current_profile and current_profile.personal_info.emergency_contact_relationship == 'Friend' else '' }}>Friend</option>
+                                    <option value="Other" {{ 'selected' if current_profile and current_profile.personal_info.emergency_contact_relationship == 'Other' else '' }}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical Information Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-heart-pulse me-2 text-danger"></i>Medical Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="primary_physician" class="form-label">Primary Physician</label>
+                                <input type="text" class="form-control" id="primary_physician" name="primary_physician" 
+                                       value="{{ current_profile.medical_info.primary_physician if current_profile else '' }}"
+                                       placeholder="Dr. Smith, Family Medicine">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="insurance_provider" class="form-label">Insurance Provider</label>
+                                <input type="text" class="form-control" id="insurance_provider" name="insurance_provider" 
+                                       value="{{ current_profile.medical_info.insurance_provider if current_profile else '' }}"
+                                       placeholder="e.g., Blue Cross Blue Shield">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="insurance_id" class="form-label">Insurance ID</label>
+                                <input type="text" class="form-control" id="insurance_id" name="insurance_id" 
+                                       value="{{ current_profile.medical_info.insurance_id if current_profile else '' }}"
+                                       placeholder="Insurance member ID number">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="allergies" class="form-label">Allergies</label>
+                                <input type="text" class="form-control" id="allergies" name="allergies" 
+                                       value="{{ current_profile.medical_info.allergies if current_profile else '' }}"
+                                       placeholder="e.g., Penicillin, Peanuts, None known">
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="current_medications" class="form-label">Current Medications</label>
+                                <textarea class="form-control" id="current_medications" name="current_medications" rows="3" 
+                                          placeholder="List all medications you're currently taking, including dosages...">{{ current_profile.medical_info.current_medications if current_profile else '' }}</textarea>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="medical_history" class="form-label">Medical History</label>
+                                <textarea class="form-control" id="medical_history" name="medical_history" rows="3" 
+                                          placeholder="Significant past medical conditions, surgeries, hospitalizations...">{{ current_profile.medical_info.medical_history if current_profile else '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mental Health Information Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-brain me-2 text-success"></i>Mental Health Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="mental_health_history" class="form-label">Mental Health History</label>
+                                <textarea class="form-control" id="mental_health_history" name="mental_health_history" rows="3" 
+                                          placeholder="Previous mental health diagnoses, treatments, hospitalizations...">{{ current_profile.mental_health.mental_health_history if current_profile else '' }}</textarea>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="current_symptoms" class="form-label">Current Symptoms</label>
+                                <textarea class="form-control" id="current_symptoms" name="current_symptoms" rows="3" 
+                                          placeholder="Describe your current symptoms, concerns, or challenges...">{{ current_profile.mental_health.current_symptoms if current_profile else '' }}</textarea>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="therapy_goals" class="form-label">Therapy Goals</label>
+                                <textarea class="form-control" id="therapy_goals" name="therapy_goals" rows="3" 
+                                          placeholder="What do you hope to achieve through therapy?">{{ current_profile.mental_health.therapy_goals if current_profile else '' }}</textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="previous_therapy" class="form-label">Previous Therapy Experience</label>
+                                <select class="form-select" id="previous_therapy" name="previous_therapy">
+                                    <option value="">Select option</option>
+                                    <option value="None" {{ 'selected' if current_profile and current_profile.mental_health.previous_therapy == 'None' else '' }}>No previous therapy</option>
+                                    <option value="Some" {{ 'selected' if current_profile and current_profile.mental_health.previous_therapy == 'Some' else '' }}>Some therapy experience</option>
+                                    <option value="Extensive" {{ 'selected' if current_profile and current_profile.mental_health.previous_therapy == 'Extensive' else '' }}>Extensive therapy history</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="support_system" class="form-label">Support System</label>
+                                <input type="text" class="form-control" id="support_system" name="support_system" 
+                                       value="{{ current_profile.mental_health.support_system if current_profile else '' }}"
+                                       placeholder="Family, friends, support groups, etc.">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lifestyle Information Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-house me-2 text-info"></i>Lifestyle Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="occupation" class="form-label">Occupation</label>
+                                <input type="text" class="form-control" id="occupation" name="occupation" 
+                                       value="{{ current_profile.lifestyle.occupation if current_profile else '' }}"
+                                       placeholder="Your job title or profession">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="education_level" class="form-label">Education Level</label>
+                                <select class="form-select" id="education_level" name="education_level">
+                                    <option value="">Select education level</option>
+                                    <option value="High School" {{ 'selected' if current_profile and current_profile.lifestyle.education_level == 'High School' else '' }}>High School</option>
+                                    <option value="Some College" {{ 'selected' if current_profile and current_profile.lifestyle.education_level == 'Some College' else '' }}>Some College</option>
+                                    <option value="Bachelor's Degree" {{ 'selected' if current_profile and current_profile.lifestyle.education_level == "Bachelor's Degree" else '' }}>Bachelor's Degree</option>
+                                    <option value="Master's Degree" {{ 'selected' if current_profile and current_profile.lifestyle.education_level == "Master's Degree" else '' }}>Master's Degree</option>
+                                    <option value="Doctoral Degree" {{ 'selected' if current_profile and current_profile.lifestyle.education_level == 'Doctoral Degree' else '' }}>Doctoral Degree</option>
+                                    <option value="Other" {{ 'selected' if current_profile and current_profile.lifestyle.education_level == 'Other' else '' }}>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="marital_status" class="form-label">Marital Status</label>
+                                <select class="form-select" id="marital_status" name="marital_status">
+                                    <option value="">Select marital status</option>
+                                    <option value="Single" {{ 'selected' if current_profile and current_profile.lifestyle.marital_status == 'Single' else '' }}>Single</option>
+                                    <option value="Married" {{ 'selected' if current_profile and current_profile.lifestyle.marital_status == 'Married' else '' }}>Married</option>
+                                    <option value="Divorced" {{ 'selected' if current_profile and current_profile.lifestyle.marital_status == 'Divorced' else '' }}>Divorced</option>
+                                    <option value="Widowed" {{ 'selected' if current_profile and current_profile.lifestyle.marital_status == 'Widowed' else '' }}>Widowed</option>
+                                    <option value="Partnered" {{ 'selected' if current_profile and current_profile.lifestyle.marital_status == 'Partnered' else '' }}>Partnered</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="living_situation" class="form-label">Living Situation</label>
+                                <select class="form-select" id="living_situation" name="living_situation">
+                                    <option value="">Select living situation</option>
+                                    <option value="Alone" {{ 'selected' if current_profile and current_profile.lifestyle.living_situation == 'Alone' else '' }}>Live alone</option>
+                                    <option value="With family" {{ 'selected' if current_profile and current_profile.lifestyle.living_situation == 'With family' else '' }}>With family</option>
+                                    <option value="With spouse/partner" {{ 'selected' if current_profile and current_profile.lifestyle.living_situation == 'With spouse/partner' else '' }}>With spouse/partner</option>
+                                    <option value="With roommates" {{ 'selected' if current_profile and current_profile.lifestyle.living_situation == 'With roommates' else '' }}>With roommates</option>
+                                    <option value="Assisted living" {{ 'selected' if current_profile and current_profile.lifestyle.living_situation == 'Assisted living' else '' }}>Assisted living</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label for="substance_use" class="form-label">Substance Use History</label>
+                                <textarea class="form-control" id="substance_use" name="substance_use" rows="3" 
+                                          placeholder="History of alcohol, tobacco, or other substance use (this information is confidential and helps with treatment planning)">{{ current_profile.lifestyle.substance_use if current_profile else '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-body text-center py-4">
+                        <h5 class="text-success mb-3">Save Your Progress</h5>
+                        <p class="text-muted mb-4">
+                            Your information is secure and confidential. You can save your progress at any time and complete the rest later.
+                        </p>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <a href="{{ url_for('patients.dashboard') }}" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                            <button type="button" id="saveProgress" class="btn btn-primary btn-lg px-4">
+                                <i class="bi bi-save me-2"></i>Save Progress
+                            </button>
+                            <button type="submit" class="btn btn-success btn-lg px-5">
+                                <i class="bi bi-check-circle me-2"></i>Complete Profile
+                            </button>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Use "Save Progress" to save your current entries, or "Complete Profile" when you're finished.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set progress bar widths dynamically
+    document.querySelectorAll('.progress-bar[data-completion]').forEach(function(progressBar) {
+        const completion = progressBar.getAttribute('data-completion');
+        progressBar.style.width = completion + '%';
+    });
+    
+    const form = document.getElementById('profileForm');
+    const saveProgressBtn = document.getElementById('saveProgress');
+    
+    // Function to collect form data
+    function getFormData() {
+        const formData = new FormData(form);
+        return formData;
+    }
+    
+    // Function to show loading state
+    function setLoadingState(button, isLoading) {
+        if (isLoading) {
+            button.disabled = true;
+            const originalText = button.innerHTML;
+            button.setAttribute('data-original', originalText);
+            button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+        } else {
+            button.disabled = false;
+            button.innerHTML = button.getAttribute('data-original');
+        }
+    }
+    
+    // Save Progress button handler (partial save)
+    saveProgressBtn.addEventListener('click', function() {
+        setLoadingState(this, true);
+        const formData = getFormData();
+        formData.append('save_type', 'partial');
+        
+        fetch('{{ url_for("patients.complete_profile") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            setLoadingState(saveProgressBtn, false);
+            
+            if (data.success) {
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show mt-3';
+                alertDiv.innerHTML = `
+                    <i class="bi bi-check-circle me-2"></i>${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                // Insert after the progress card
+                const progressCard = document.querySelector('.card');
+                progressCard.parentNode.insertBefore(alertDiv, progressCard.nextSibling);
+                
+                // Update progress bar if provided
+                if (data.completion_percentage !== undefined) {
+                    const progressBar = document.querySelector('.progress-bar[data-completion]');
+                    progressBar.style.width = data.completion_percentage + '%';
+                    progressBar.setAttribute('data-completion', data.completion_percentage);
+                    
+                    // Update percentage badge
+                    const percentageBadge = document.querySelector('.badge.bg-primary');
+                    percentageBadge.textContent = data.completion_percentage + '% Complete';
+                }
+            } else {
+                alert('Error saving progress: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            setLoadingState(saveProgressBtn, false);
+            console.error('Error:', error);
+            alert('Network error. Please try again.');
+        });
+    });
+    
+    // Complete Profile form submission handler (full validation)
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Basic client-side validation for complete submission
+        const requiredFields = ['date_of_birth', 'gender', 'phone'];
+        let hasErrors = false;
+        
+        requiredFields.forEach(function(fieldName) {
+            const field = document.getElementById(fieldName);
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                hasErrors = true;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (hasErrors) {
+            alert('Please fill in the required fields (Date of Birth, Gender, Phone) to complete your profile.');
+            return;
+        }
+        
+        // Submit form for complete profile
+        const submitBtn = form.querySelector('button[type="submit"]');
+        setLoadingState(submitBtn, true);
+        
+        const formData = getFormData();
+        formData.append('save_type', 'complete');
+        
+        fetch('{{ url_for("patients.complete_profile") }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.success) {
+                window.location.href = '{{ url_for("patients.dashboard") }}';
+            } else {
+                setLoadingState(submitBtn, false);
+                alert('Error completing profile: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            setLoadingState(submitBtn, false);
+            console.error('Error:', error);
+            alert('Network error. Please try again.');
+        });
+    });
+    
+    // Remove validation styling when user types
+    document.querySelectorAll('input, select, textarea').forEach(function(element) {
+        element.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+    
+    // Auto-save functionality (save progress every 2 minutes of inactivity)
+    let autoSaveTimer;
+    function resetAutoSaveTimer() {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(function() {
+            // Only auto-save if there's content in the form
+            const formData = new FormData(form);
+            let hasContent = false;
+            for (let [key, value] of formData.entries()) {
+                if (value && value.trim()) {
+                    hasContent = true;
+                    break;
+                }
+            }
+            
+            if (hasContent) {
+                console.log('Auto-saving progress...');
+                saveProgressBtn.click();
+            }
+        }, 120000); // 2 minutes
+    }
+    
+    // Reset timer on any form interaction
+    form.addEventListener('input', resetAutoSaveTimer);
+    form.addEventListener('change', resetAutoSaveTimer);
+    
+    // Initial timer setup
+    resetAutoSaveTimer();
+});
+</script>
+
+{% endblock %}

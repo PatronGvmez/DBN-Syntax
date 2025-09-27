@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Administrator Profile</h2>
+                <a href="{{ url_for('admin.edit_profile') }}" class="btn btn-outline-primary">Edit Profile</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="rounded-circle bg-danger d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-shield-check text-white" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-1">{{ user.name }}</h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-shield-check me-1"></i>
+                            System Administrator
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-danger mb-2">
+                            <i class="bi bi-envelope me-2"></i>Contact Information
+                        </h4>
+                        <div class="mb-2">
+                            <strong>Email:</strong> {{ user.email }}
+                        </div>
+                        <div>
+                            <strong>Phone:</strong> {{ user.phone if user.phone else 'Not provided' }}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-danger mb-2">
+                            <i class="bi bi-gear me-2"></i>Account Information
+                        </h4>
+                        <div class="mb-2">
+                            <strong>Role:</strong> {{ user.role.capitalize() }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Admin Level:</strong> Full Access
+                        </div>
+                        <div>
+                            <strong>Member Since:</strong> 
+                            {% if user.created_at %}
+                                {{ user.created_at.strftime('%B %d, %Y') if user.created_at.strftime else 'Unknown' }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Specific Information -->
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="text-danger mb-3">
+                            <i class="bi bi-bar-chart me-2"></i>System Overview
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-people-fill text-primary" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-2">Total Users</h5>
+                                        <p class="text-muted">Manage all system users</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-heart-pulse-fill text-success" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-2">Therapists</h5>
+                                        <p class="text-muted">Monitor therapist activities</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-person-hearts text-info" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-2">Patients</h5>
+                                        <p class="text-muted">Oversee patient care</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

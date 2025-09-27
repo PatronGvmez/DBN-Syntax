@@ -3,6 +3,93 @@
 {% block title %}Patient Dashboard{% endblock %}
 
 {% block content %}
+
+<!-- Profile Completion Modal -->
+{% if not profile_status.is_complete %}
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="profileModalLabel">
+                    <i class="bi bi-person-circle me-2"></i>Complete Your Profile
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-8">
+                        <h6 class="text-primary">Profile Completion: {{ profile_status.completion_percentage }}%</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 data-completion="{{ profile_status.completion_percentage }}" 
+                                 aria-valuenow="{{ profile_status.completion_percentage }}" 
+                                 aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <p class="text-muted mb-0">{{ profile_status.completed_fields }} of {{ profile_status.total_fields }} fields completed</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <i class="bi bi-clipboard-data text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">Why complete your profile?</h6>
+                    <ul class="mb-0">
+                        <li>Help us provide better, personalized care</li>
+                        <li>Enable accurate therapist matching</li>
+                        <li>Ensure we have emergency contact information</li>
+                        <li>Track your medical history and medications</li>
+                    </ul>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-danger mb-3">Missing Information:</h6>
+                        <div class="row">
+                            {% set categories = {} %}
+                            {% for field in profile_status.missing_fields %}
+                                {% if categories.update({field.category: categories.get(field.category, []) + [field.name]}) %}{% endif %}
+                            {% endfor %}
+                            
+                            {% for category, fields in categories.items() %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-light">
+                                    <div class="card-header bg-light py-2">
+                                        <h6 class="mb-0 text-capitalize">
+                                            {% if category == 'personal_info' %}
+                                                <i class="bi bi-person me-2"></i>Personal Information
+                                            {% elif category == 'medical_info' %}
+                                                <i class="bi bi-heart-pulse me-2"></i>Medical Information
+                                            {% elif category == 'mental_health' %}
+                                                <i class="bi bi-brain me-2"></i>Mental Health
+                                            {% elif category == 'lifestyle' %}
+                                                <i class="bi bi-house me-2"></i>Lifestyle
+                                            {% endif %}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body py-2">
+                                        {% for field_name in fields %}
+                                        <small class="d-block text-muted">• {{ field_name }}</small>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Skip for Now
+                </button>
+                <a href="{{ url_for('patients.complete_profile') }}" class="btn btn-primary">
+                    <i class="bi bi-pencil-square me-2"></i>Complete Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -12,10 +99,56 @@
                     <div class="btn-group me-2">
                         <span class="badge bg-primary">Welcome, {{ user.name }}</span>
                     </div>
+                    {% if profile_status and not profile_status.is_complete %}
+                    <div class="btn-group me-2">
+                        <a href="{{ url_for('patients.complete_profile') }}" class="btn btn-warning btn-sm">
+                            <i class="bi bi-exclamation-circle me-1"></i>Complete Profile ({{ profile_status.completion_percentage }}%)
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Profile Completion Status (if incomplete) -->
+    {% if profile_status and not profile_status.is_complete %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clipboard-check me-2"></i>Profile Completion Status
+                        </h5>
+                        <span class="badge bg-light text-dark fs-6">{{ profile_status.completion_percentage }}% Complete</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="progress mb-3" style="height: 15px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     data-completion="{{ profile_status.completion_percentage }}" 
+                                     aria-valuenow="{{ profile_status.completion_percentage }}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Complete your profile to help us provide better, personalized care and match you with the right therapist.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('patients.complete_profile') }}" class="btn btn-primary">
+                                <i class="bi bi-pencil-square me-2"></i>Complete Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Patient Information Section -->
     <div class="row mb-4">
@@ -53,6 +186,37 @@
                                 <h3 class="text-success">{{ progress_updates|length }}</h3>
                                 <p>Recent Update(s)</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Therapist Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-badge me-2"></i>My Therapist
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <p class="mb-2">
+                                <i class="bi bi-info-circle text-info me-2"></i>
+                                Connect with your assigned therapist for personalized care and support.
+                            </p>
+                            <p class="text-muted mb-0">
+                                View your therapist information, assignment status, and communication options.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('patients.my_therapist') }}" class="btn btn-info btn-lg">
+                                <i class="bi bi-arrow-right-circle me-2"></i>View My Therapist
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -160,4 +324,115 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript for Profile Modal and Progress Bars -->
+{% if not profile_status.is_complete %}
+<script type="text/javascript">
+    // Profile modal configuration
+    window.showProfileModal = true;
+</script>
+{% else %}
+<script type="text/javascript">
+    // No modal needed
+    window.showProfileModal = false;
+</script>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set progress bar widths dynamically
+    document.querySelectorAll('.progress-bar[data-completion]').forEach(function(progressBar) {
+        const completion = progressBar.getAttribute('data-completion');
+        progressBar.style.width = completion + '%';
+    });
+    
+    // Handle profile modal if needed
+    if (window.showProfileModal) {
+        // Check how many times user has skipped (limit to 3 skips per day)
+        const today = new Date().toDateString();
+        const skipData = JSON.parse(localStorage.getItem('profile_modal_skip_data') || '{}');
+        
+        // Reset skip count if it's a new day
+        if (skipData.date !== today) {
+            skipData.date = today;
+            skipData.count = 0;
+            localStorage.setItem('profile_modal_skip_data', JSON.stringify(skipData));
+        }
+        
+        // Show modal if user hasn't skipped too many times today and hasn't skipped in this session
+        const hasSkippedSession = sessionStorage.getItem('profile_modal_skipped') === 'true';
+        const maxSkipsReached = skipData.count >= 2; // Allow 2 skips per day
+        
+        if (!hasSkippedSession && !maxSkipsReached) {
+            // Delay modal show slightly to ensure smooth loading
+            setTimeout(function() {
+                var profileModalElement = document.getElementById('profileModal');
+                if (profileModalElement) {
+                    var profileModal = new bootstrap.Modal(profileModalElement);
+                    profileModal.show();
+                    
+                    // Handle skip button
+                    var skipButton = profileModalElement.querySelector('[data-bs-dismiss="modal"]');
+                    if (skipButton) {
+                        skipButton.addEventListener('click', function() {
+                            // Mark as skipped for this session
+                            sessionStorage.setItem('profile_modal_skipped', 'true');
+                            
+                            // Update skip count in localStorage
+                            const currentSkipData = JSON.parse(localStorage.getItem('profile_modal_skip_data') || '{}');
+                            currentSkipData.count = (currentSkipData.count || 0) + 1;
+                            currentSkipData.date = new Date().toDateString();
+                            localStorage.setItem('profile_modal_skip_data', JSON.stringify(currentSkipData));
+                            
+                            // Show a reminder message if this is their second skip
+                            if (currentSkipData.count >= 2) {
+                                setTimeout(function() {
+                                    const alertDiv = document.createElement('div');
+                                    alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+                                    alertDiv.innerHTML = `
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        <strong>Reminder:</strong> Completing your profile helps us provide better care. 
+                                        You can complete it anytime by clicking the 
+                                        <a href="{{ url_for('patients.complete_profile') }}" class="alert-link">Complete Profile</a> button.
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    `;
+                                    
+                                    const container = document.querySelector('.container-fluid');
+                                    const firstCard = container.querySelector('.card');
+                                    if (firstCard) {
+                                        container.insertBefore(alertDiv, firstCard);
+                                    }
+                                }, 1000);
+                            }
+                        });
+                    }
+                }
+            }, 800); // Small delay for better UX
+        } else if (maxSkipsReached && !hasSkippedSession) {
+            // Show subtle reminder banner instead of modal
+            const bannerDiv = document.createElement('div');
+            bannerDiv.className = 'alert alert-info alert-dismissible fade show mt-3';
+            bannerDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle me-3" style="font-size: 1.5rem;"></i>
+                    <div class="flex-grow-1">
+                        <strong>Profile Incomplete:</strong> Complete your profile to help us provide better care.
+                    </div>
+                    <a href="{{ url_for('patients.complete_profile') }}" class="btn btn-sm btn-primary me-2">
+                        Complete Now
+                    </a>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            const container = document.querySelector('.container-fluid');
+            const firstCard = container.querySelector('.card');
+            if (firstCard) {
+                container.insertBefore(bannerDiv, firstCard);
+            }
+        }
+    }
+});
+</script>
+
 {% endblock %}

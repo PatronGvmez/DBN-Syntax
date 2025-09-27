@@ -84,6 +84,8 @@ def get_user(user_id):
             if data.get('type') == 'user_account' or 'type' not in data:
                 # Skip medical records (they have medical_condition field)
                 if 'medical_condition' not in data:
+                    # Add the document ID to the data
+                    data['id'] = user_id
                     return data
     
     return None
@@ -401,3 +403,377 @@ def get_mindlink_stats():
     except Exception as e:
         print(f"Error getting MindLink stats: {e}")
         return {'total_posts': 0, 'active_members': 0}
+
+def migrate_existing_patients():
+    """Add profile structure to existing patient accounts."""
+    try:
+        db = get_db()
+        
+        # Get all patient user accounts
+        patients_collection = db.collection('patients')
+        patient_docs = patients_collection.where('type', '==', 'user_account').stream()
+        
+        updated_count = 0
+        
+        for patient_doc in patient_docs:
+            patient_data = patient_doc.to_dict()
+            
+            # Check if profile already exists
+            if 'profile' not in patient_data:
+                # Add empty profile structure
+                patient_data['profile'] = {
+                    'personal_info': {},
+                    'medical_info': {},
+                    'mental_health': {},
+                    'lifestyle': {},
+                    'created_at': firestore.SERVER_TIMESTAMP
+                }
+                
+                # Update the document
+                patient_doc.reference.set(patient_data)
+                updated_count += 1
+                print(f"Added profile structure to patient: {patient_data.get('name', patient_doc.id)}")
+        
+        print(f"Migration completed. Updated {updated_count} patient records.")
+        return updated_count
+        
+    except Exception as e:
+        print(f"Error migrating existing patients: {e}")
+        return 0
+
+# Patient Profile Management Functions
+def get_patient_profile_completion(user_id):
+    """Check patient profile completion status."""
+    try:
+        db = get_db()
+        
+        # Get patient user account
+        patient = get_user(user_id)
+        if not patient or patient.get('role') != 'patient':
+            return {'is_complete': True, 'missing_fields': []}
+        
+        # Define required profile fields
+        required_fields = {
+            'personal_info': {
+                'date_of_birth': 'Date of Birth',
+                'gender': 'Gender', 
+                'phone': 'Phone Number',
+                'address': 'Address',
+                'emergency_contact_name': 'Emergency Contact Name',
+                'emergency_contact_phone': 'Emergency Contact Phone',
+                'emergency_contact_relationship': 'Emergency Contact Relationship'
+            },
+            'medical_info': {
+                'primary_physician': 'Primary Physician',
+                'insurance_provider': 'Insurance Provider',
+                'insurance_id': 'Insurance ID',
+                'allergies': 'Allergies',
+                'current_medications': 'Current Medications',
+                'medical_history': 'Medical History'
+            },
+            'mental_health': {
+                'mental_health_history': 'Mental Health History',
+                'current_symptoms': 'Current Symptoms',
+                'therapy_goals': 'Therapy Goals',
+                'previous_therapy': 'Previous Therapy Experience',
+                'support_system': 'Support System'
+            },
+            'lifestyle': {
+                'occupation': 'Occupation',
+                'education_level': 'Education Level',
+                'marital_status': 'Marital Status',
+                'living_situation': 'Living Situation',
+                'substance_use': 'Substance Use History'
+            }
+        }
+        
+        missing_fields = []
+        profile_data = patient.get('profile', {})
+        
+        # Check each category and field
+        for category, fields in required_fields.items():
+            category_data = profile_data.get(category, {})
+            for field_key, field_name in fields.items():
+                if not category_data.get(field_key):
+                    missing_fields.append({
+                        'category': category,
+                        'field': field_key,
+                        'name': field_name
+                    })
+        
+        is_complete = len(missing_fields) == 0
+        completion_percentage = max(0, 100 - int((len(missing_fields) / len([f for cat in required_fields.values() for f in cat])) * 100))
+        
+        return {
+            'is_complete': is_complete,
+            'missing_fields': missing_fields,
+            'completion_percentage': completion_percentage,
+            'total_fields': len([f for cat in required_fields.values() for f in cat]),
+            'completed_fields': len([f for cat in required_fields.values() for f in cat]) - len(missing_fields)
+        }
+        
+    except Exception as e:
+        print(f"Error checking patient profile completion: {e}")
+        return {'is_complete': True, 'missing_fields': []}
+
+def update_patient_profile(user_id, profile_data):
+    """Update patient profile with comprehensive information."""
+    try:
+        db = get_db()
+        
+        # Find the user in the correct collection (same logic as get_user)
+        collections = ['admins', 'therapists', 'patients']
+        user_ref = None
+        current_data = None
+        
+        for collection_name in collections:
+            temp_user_ref = db.collection(collection_name).document(user_id)
+            user_doc = temp_user_ref.get()
+            
+            if user_doc.exists:
+                data = user_doc.to_dict()
+                # Check if it's a user account (not a medical record)
+                if data.get('type') == 'user_account' or 'type' not in data:
+                    if 'medical_condition' not in data:  # Skip medical records
+                        user_ref = temp_user_ref
+                        current_data = data
+                        break
+        
+        if not user_ref or not current_data:
+            return False
+        
+        # Ensure user is a patient
+        if current_data.get('role') != 'patient':
+            return False
+        
+        # Initialize profile if it doesn't exist
+        if 'profile' not in current_data:
+            current_data['profile'] = {}
+        
+        # Update profile sections
+        for category, fields in profile_data.items():
+            if category not in current_data['profile']:
+                current_data['profile'][category] = {}
+            
+            # Update fields in this category (allow empty values for partial saves)
+            for field_key, field_value in fields.items():
+                current_data['profile'][category][field_key] = field_value
+        
+        # Add metadata
+        from firebase_admin import firestore
+        current_data['profile']['last_updated'] = firestore.SERVER_TIMESTAMP
+        current_data['updated_at'] = firestore.SERVER_TIMESTAMP
+        
+        # Save updated data
+        user_ref.set(current_data)
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error updating patient profile: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+def get_patient_full_profile(user_id):
+    """Get complete patient profile information."""
+    try:
+        patient = get_user(user_id)
+        if not patient or patient.get('role') != 'patient':
+            return None
+        
+        # Get profile data with default structure
+        profile = patient.get('profile', {})
+        
+        return {
+            'user': patient,
+            'personal_info': profile.get('personal_info', {}),
+            'medical_info': profile.get('medical_info', {}),
+            'mental_health': profile.get('mental_health', {}),
+            'lifestyle': profile.get('lifestyle', {}),
+            'last_updated': profile.get('last_updated')
+        }
+        
+    except Exception as e:
+        print(f"Error getting patient full profile: {e}")
+        return None
+
+def get_users_by_role(role):
+    """Get all users by their role."""
+    try:
+        db = get_db()
+        
+        # Map role to collection
+        collection_name = {
+            'admin': 'admins',
+            'therapist': 'therapists', 
+            'patient': 'patients'
+        }.get(role)
+        
+        if not collection_name:
+            return []
+        
+        users = []
+        user_docs = db.collection(collection_name).where('type', '==', 'user_account').stream()
+        
+        for user_doc in user_docs:
+            user_data = user_doc.to_dict()
+            user_data['id'] = user_doc.id
+            users.append(user_data)
+            
+        return users
+        
+    except Exception as e:
+        print(f"Error getting users by role: {e}")
+        return []
+
+# Patient Assignment Functions
+def create_patient_assignment_request(patient_id, patient_info):
+    """Create a new patient assignment request."""
+    try:
+        db = get_db()
+        
+        # Check if patient already has an active request
+        existing_requests = list(db.collection('patient_assignment_requests')
+                               .where('patient_id', '==', patient_id)
+                               .where('status', 'in', ['pending', 'approved'])
+                               .stream())
+        
+        if existing_requests:
+            return None  # Patient already has active request
+        
+        request_data = {
+            'patient_id': patient_id,
+            'patient_info': patient_info,
+            'status': 'pending',  # pending, approved, rejected
+            'created_at': firestore.SERVER_TIMESTAMP,
+            'assigned_therapist_id': None,
+            'assigned_at': None,
+            'type': 'assignment_request'
+        }
+        
+        doc_ref = db.collection('patient_assignment_requests').add(request_data)
+        return doc_ref[1].id
+        
+    except Exception as e:
+        print(f"Error creating patient assignment request: {e}")
+        return None
+
+def get_patient_assignment_request(patient_id):
+    """Get patient's assignment request status."""
+    try:
+        db = get_db()
+        
+        # Get the most recent request for this patient
+        requests = (db.collection('patient_assignment_requests')
+                   .where('patient_id', '==', patient_id)
+                   .order_by('created_at', direction=firestore.Query.DESCENDING)
+                   .limit(1)
+                   .stream())
+        
+        for request_doc in requests:
+            request_data = request_doc.to_dict()
+            request_data['id'] = request_doc.id
+            return request_data
+            
+        return None
+        
+    except Exception as e:
+        print(f"Error getting patient assignment request: {e}")
+        return None
+
+def get_patient_assigned_therapist(patient_id):
+    """Get patient's assigned therapist information."""
+    try:
+        # First check if patient has an approved assignment request
+        assignment_request = get_patient_assignment_request(patient_id)
+        
+        if (assignment_request and 
+            assignment_request.get('status') == 'approved' and 
+            assignment_request.get('assigned_therapist_id')):
+            
+            therapist_id = assignment_request.get('assigned_therapist_id')
+            therapist = get_user(therapist_id)
+            
+            if therapist:
+                return {
+                    'therapist': therapist,
+                    'assigned_at': assignment_request.get('assigned_at'),
+                    'assignment_id': assignment_request.get('id')
+                }
+        
+        # Fallback: Check old assignments collection for backward compatibility
+        from models import get_patient_therapists
+        therapists = get_patient_therapists(patient_id)
+        if therapists:
+            return {
+                'therapist': therapists[0],  # Return first assigned therapist
+                'assigned_at': None,
+                'assignment_id': None
+            }
+            
+        return None
+        
+    except Exception as e:
+        print(f"Error getting patient assigned therapist: {e}")
+        return None
+
+def approve_patient_assignment_request(request_id, therapist_id):
+    """Approve a patient assignment request and assign therapist."""
+    try:
+        db = get_db()
+        
+        # Update the assignment request
+        request_ref = db.collection('patient_assignment_requests').document(request_id)
+        request_ref.update({
+            'status': 'approved',
+            'assigned_therapist_id': therapist_id,
+            'assigned_at': firestore.SERVER_TIMESTAMP
+        })
+        
+        # Also create an entry in the assignments collection for backward compatibility
+        request_data = request_ref.get().to_dict()
+        patient_id = request_data.get('patient_id')
+        
+        if patient_id:
+            assignment_data = {
+                'patient_id': patient_id,
+                'therapist_id': therapist_id,
+                'created_at': firestore.SERVER_TIMESTAMP
+            }
+            db.collection('assignments').add(assignment_data)
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error approving patient assignment request: {e}")
+        return False
+
+def get_pending_assignment_requests():
+    """Get all pending patient assignment requests for admin review."""
+    try:
+        db = get_db()
+        
+        requests = []
+        pending_requests = (db.collection('patient_assignment_requests')
+                          .where('status', '==', 'pending')
+                          .order_by('created_at', direction=firestore.Query.DESCENDING)
+                          .stream())
+        
+        for request_doc in pending_requests:
+            request_data = request_doc.to_dict()
+            request_data['id'] = request_doc.id
+            
+            # Get patient info
+            patient_id = request_data.get('patient_id')
+            if patient_id:
+                patient = get_user(patient_id)
+                request_data['patient'] = patient
+            
+            requests.append(request_data)
+            
+        return requests
+        
+    except Exception as e:
+        print(f"Error getting pending assignment requests: {e}")
+        return []

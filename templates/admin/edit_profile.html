@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Edit Administrator Profile</h2>
+                <a href="{{ url_for('admin.profile') }}" class="btn btn-outline-secondary">Back to Profile</a>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('admin.edit_profile') }}">
+                    <div class="form-group mb-3">
+                        <label for="name" class="form-label">
+                            <i class="bi bi-person me-2"></i>Full Name
+                        </label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                    </div>
+                    
+                    <div class="form-group mb-3">
+                        <label for="email" class="form-label">
+                            <i class="bi bi-envelope me-2"></i>Email
+                        </label>
+                        <input type="email" class="form-control" id="email" value="{{ user.email }}" disabled>
+                        <small class="form-text text-muted">Email cannot be changed for security reasons.</small>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label for="phone" class="form-label">
+                            <i class="bi bi-telephone me-2"></i>Phone Number
+                        </label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone if user.phone else '' }}">
+                        <small class="form-text text-muted">Used for system notifications and emergency contact.</small>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Administrator Note:</strong> Profile changes affect system-wide administrative functions.
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

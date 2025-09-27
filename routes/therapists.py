@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, session
 from routes.auth import login_required, therapist_required, admin_required, get_current_user
-from models import get_user, get_therapist_patients
+from models import get_user, get_therapist_patients, update_user
 
 # Initialize therapists blueprint
 therapists_bp = Blueprint('therapists', __name__, url_prefix='/therapists')
@@ -164,3 +164,44 @@ def unassign_patient(therapist_id, patient_id):
         flash(f'Error unassigning patient: {str(e)}', 'danger')
     
     return redirect(url_for('therapists.therapist_patients', therapist_id=therapist_id))
+
+@therapists_bp.route('/profile')
+@login_required
+@therapist_required
+def profile():
+    """Display therapist profile."""
+    user = get_current_user()
+    return render_template('therapists/profile.html', user=user)
+
+@therapists_bp.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+@therapist_required
+def edit_profile():
+    """Edit therapist profile."""
+    user = get_current_user()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone', '')
+        
+        if not name:
+            flash('Name is required', 'danger')
+            return render_template('therapists/edit_profile.html', user=user)
+            
+        try:
+            # Update user in Firestore
+            user_id = update_user(session['user_id'], {
+                'name': name,
+                'phone': phone
+            })
+            
+            if user_id:
+                flash('Profile updated successfully', 'success')
+                return redirect(url_for('therapists.profile'))
+            else:
+                flash('Failed to update profile: User not found', 'danger')
+            
+        except Exception as e:
+            flash(f'Failed to update profile: {str(e)}', 'danger')
+    
+    return render_template('therapists/edit_profile.html', user=user)

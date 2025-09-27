@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Therapist Profile</h2>
+                <a href="{{ url_for('therapists.edit_profile') }}" class="btn btn-outline-success">Edit Profile</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="rounded-circle bg-success d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                        <i class="bi bi-heart-pulse text-white" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-1">{{ user.name }}</h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-heart-pulse me-1"></i>
+                            Licensed Therapist
+                        </p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-success mb-2">
+                            <i class="bi bi-envelope me-2"></i>Contact Information
+                        </h4>
+                        <div class="mb-2">
+                            <strong>Email:</strong> {{ user.email }}
+                        </div>
+                        <div>
+                            <strong>Phone:</strong> {{ user.phone if user.phone else 'Not provided' }}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-success mb-2">
+                            <i class="bi bi-briefcase me-2"></i>Professional Information
+                        </h4>
+                        <div class="mb-2">
+                            <strong>Role:</strong> {{ user.role.capitalize() }}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Specialization:</strong> Mental Health & Rehabilitation
+                        </div>
+                        <div>
+                            <strong>Licensed Since:</strong> 
+                            {% if user.created_at %}
+                                {{ user.created_at.strftime('%B %d, %Y') if user.created_at.strftime else 'Unknown' }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Therapist Specific Information -->
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="text-success mb-3">
+                            <i class="bi bi-clipboard-data me-2"></i>Practice Overview
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-2">My Patients</h5>
+                                        <p class="text-muted">Current active caseload</p>
+                                        <a href="{{ url_for('therapists.patients') }}" class="btn btn-sm btn-outline-primary">View Patients</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-calendar-check text-info" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-2">Sessions</h5>
+                                        <p class="text-muted">Schedule & appointments</p>
+                                        <button class="btn btn-sm btn-outline-info" disabled>Coming Soon</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-graph-up text-success" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-2">Progress</h5>
+                                        <p class="text-muted">Patient outcomes</p>
+                                        <button class="btn btn-sm btn-outline-success" disabled>Coming Soon</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Professional Credentials -->
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="text-success mb-3">
+                            <i class="bi bi-award me-2"></i>Professional Credentials
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-patch-check-fill text-success me-2"></i>
+                                    <span>Licensed Clinical Therapist</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-patch-check-fill text-success me-2"></i>
+                                    <span>Rehabilitation Specialist</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
