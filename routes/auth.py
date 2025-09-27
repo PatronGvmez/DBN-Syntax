@@ -94,8 +94,13 @@ def login():
                     # Redirect based on role
                     if user_data.get('role') == 'admin':
                         return redirect(url_for('admin.dashboard'))
-                    else:
+                    elif user_data.get('role') == 'therapist':
                         return redirect(url_for('therapists.dashboard'))
+                    elif user_data.get('role') == 'patient':
+                        return redirect(url_for('patients.dashboard'))  # Redirect to patient dashboard
+                    else:
+                        # Default fallback
+                        return redirect(url_for('home'))
                 except Exception as auth_error:
                     flash(f'Authentication failed: {str(auth_error)}', 'danger')
             else:

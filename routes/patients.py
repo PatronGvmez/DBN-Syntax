@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from auth import login_required, therapist_required, get_current_user
+from routes.auth import login_required, therapist_required, get_current_user
 from models import (get_patient, get_patients, create_patient, update_patient, 
                     get_patient_progress, add_progress_update, get_patient_therapists)
 
@@ -15,12 +15,69 @@ def index():
     if user.get('role') == 'admin':
         # Admin sees all patients
         patients = get_patients()
+        return render_template('patients/index.html', patients=patients)
+    elif user.get('role') == 'patient':
+        # Redirect patients to their dashboard
+        return redirect(url_for('patients.dashboard'))
     else:
         # Therapists see only their assigned patients
         from models import get_therapist_patients
         patients = get_therapist_patients(user.get('id'))
+        return render_template('patients/index.html', patients=patients)
+
+@patients_bp.route('/dashboard')
+@login_required
+def dashboard():
+    """Patient dashboard - shows their own information and progress."""
+    user = get_current_user()
     
-    return render_template('patients/index.html', patients=patients)
+    # Only patients can access this dashboard
+    if user.get('role') != 'patient':
+        flash('Access denied: This is a patient-only area', 'danger')
+        return redirect(url_for('home'))
+    
+    # Get patient's own medical records (if any)
+    from models import get_db
+    db = get_db()
+    
+    # Try to find medical records for this patient (by email or name matching)
+    patient_records = []
+    medical_records = db.collection('patients').where('type', '==', 'medical_record').stream()
+    
+    user_email = user.get('email', '').lower()
+    user_name = user.get('name', '').lower()
+    
+    for record in medical_records:
+        record_data = record.to_dict()
+        record_contact = record_data.get('contact_info', '').lower()
+        record_name = record_data.get('name', '').lower()
+        
+        # Check if this record might belong to the logged-in patient
+        if (user_email in record_contact or 
+            user_name in record_name or 
+            record_name in user_name):
+            record_data['id'] = record.id
+            patient_records.append(record_data)
+    
+    # Get progress updates for the patient's records
+    progress_updates = []
+    for record in patient_records:
+        from models import get_patient_progress
+        updates = get_patient_progress(record['id'])
+        for update in updates:
+            update['patient_name'] = record.get('name')
+            progress_updates.append(update)
+    
+    # Sort progress updates by date (most recent first)
+    progress_updates.sort(key=lambda x: x.get('date', ''), reverse=True)
+    progress_updates = progress_updates[:5]  # Show only recent 5
+    
+    from datetime import datetime
+    return render_template('patients/dashboard.html', 
+                          user=user,
+                          patient_records=patient_records,
+                          progress_updates=progress_updates,
+                          now=datetime.now())
 
 @patients_bp.route('/view/<patient_id>')
 @login_required

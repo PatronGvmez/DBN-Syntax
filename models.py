@@ -23,50 +23,148 @@ def get_db():
 
 # User model functions
 def create_user(email, password, role='therapist', name='', phone=''):
-    """Creates a new user in Firebase Authentication and Firestore."""
+    """Creates a new user in Firebase Authentication and appropriate Firestore collection."""
     try:
-        # Create user in Firebase Auth
+        # Create user in Firebase Auth (password is stored securely by Firebase)
         user = auth.create_user(
             email=email,
             password=password,
             display_name=name,
         )
         
-        # Create user in Firestore
+        # Determine collection based on role
+        collection_name = _get_collection_by_role(role)
+        
+        # Create user profile in appropriate Firestore collection
+        # NOTE: Password is NOT stored here - only Firebase Auth handles passwords
         db = get_db()
-        db.collection('users').document(user.uid).set({
+        user_data = {
+            'type': 'user_account',  # Distinguish from medical records
             'email': email,
             'name': name,
             'phone': phone,
             'role': role,
             'created_at': firestore.SERVER_TIMESTAMP,
-        })
+        }
+        db.collection(collection_name).document(user.uid).set(user_data)
         
         return user.uid
     except Exception as e:
         print(f"Error creating user: {e}")
         return None
 
+def _get_collection_by_role(role):
+    """Returns the appropriate collection name based on user role."""
+    if role == 'admin':
+        return 'admins'
+    elif role == 'therapist':
+        return 'therapists'
+    elif role == 'patient':
+        return 'patients'  # Single collection for patient users and medical records
+    else:
+        return 'therapists'  # Default fallback
+
 def get_user(user_id):
-    """Retrieves a user by ID from Firestore."""
+    """Retrieves a user by ID from appropriate Firestore collection."""
     if not user_id:
         return None
     
     db = get_db()
-    user_ref = db.collection('users').document(user_id)
-    user = user_ref.get()
     
-    if user.exists:
-        return user.to_dict()
+    # Try to find user in all possible collections
+    collections = ['admins', 'therapists', 'patients']
+    
+    for collection_name in collections:
+        user_ref = db.collection(collection_name).document(user_id)
+        user = user_ref.get()
+        
+        if user.exists:
+            data = user.to_dict()
+            # Return if it's a user account OR if no type field (backward compatibility)
+            if data.get('type') == 'user_account' or 'type' not in data:
+                # Skip medical records (they have medical_condition field)
+                if 'medical_condition' not in data:
+                    return data
+    
     return None
+
+def get_user_by_email(email):
+    """Retrieves a user by email from appropriate Firestore collection."""
+    if not email:
+        return None
+    
+    db = get_db()
+    collections = ['admins', 'therapists', 'patients']
+    
+    for collection_name in collections:
+        users = db.collection(collection_name).where('email', '==', email).stream()
+        for user in users:
+            data = user.to_dict()
+            # Return if it's a user account OR if no type field (backward compatibility)
+            if data.get('type') == 'user_account' or 'type' not in data:
+                # Skip medical records (they have medical_condition field)
+                if 'medical_condition' not in data:
+                    data['id'] = user.id
+                    return data
+    
+    return None
+
+def update_user(user_id, data):
+    """Updates a user in the appropriate Firestore collection."""
+    if not user_id:
+        return None
+    
+    db = get_db()
+    collections = ['admins', 'therapists', 'patients']
+    
+    for collection_name in collections:
+        user_ref = db.collection(collection_name).document(user_id)
+        user = user_ref.get()
+        
+        if user.exists:
+            user_data = user.to_dict()
+            # Only update if it's a user account, not a medical record
+            if user_data.get('type') == 'user_account':
+                data['updated_at'] = firestore.SERVER_TIMESTAMP
+                user_ref.update(data)
+                return user_id
+    
+    return None
+
+def get_all_therapists():
+    """Retrieves all therapist user accounts from Firestore."""
+    db = get_db()
+    therapists = db.collection('therapists').where('type', '==', 'user_account').stream()
+    
+    result = []
+    for therapist in therapists:
+        data = therapist.to_dict()
+        data['id'] = therapist.id
+        result.append(data)
+    
+    return result
+
+def get_all_admins():
+    """Retrieves all admin user accounts from Firestore."""
+    db = get_db()
+    admins = db.collection('admins').where('type', '==', 'user_account').stream()
+    
+    result = []
+    for admin in admins:
+        data = admin.to_dict()
+        data['id'] = admin.id
+        result.append(data)
+    
+    return result
 
 # Patient model functions
 def create_patient(data):
-    """Creates a new patient in Firestore."""
+    """Creates a new patient medical record in Firestore."""
     db = get_db()
     patient_ref = db.collection('patients').document()
     
     patient_data = {
+        'type': 'medical_record',  # Distinguish from user accounts
         'name': data.get('name', ''),
         'age': data.get('age', 0),
         'medical_condition': data.get('medical_condition', ''),
@@ -80,15 +178,17 @@ def create_patient(data):
     return patient_ref.id
 
 def get_patient(patient_id):
-    """Retrieves a patient by ID from Firestore."""
+    """Retrieves a patient medical record by ID from Firestore."""
     db = get_db()
     patient_ref = db.collection('patients').document(patient_id)
     patient = patient_ref.get()
     
     if patient.exists:
         data = patient.to_dict()
-        data['id'] = patient_id
-        return data
+        # Only return if it's a medical record, not a user account
+        if data.get('type') == 'medical_record':
+            data['id'] = patient_id
+            return data
     return None
 
 def update_patient(patient_id, data):
@@ -101,9 +201,9 @@ def update_patient(patient_id, data):
     return patient_id
 
 def get_patients():
-    """Retrieves all patients from Firestore."""
+    """Retrieves all patient medical records from Firestore."""
     db = get_db()
-    patients = db.collection('patients').stream()
+    patients = db.collection('patients').where('type', '==', 'medical_record').stream()
     
     result = []
     for patient in patients:

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from auth import login_required, therapist_required, admin_required, get_current_user
+from routes.auth import login_required, therapist_required, admin_required, get_current_user
 from models import get_user, get_therapist_patients
 
 # Initialize therapists blueprint

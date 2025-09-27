@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
-from auth import login_required, admin_required, get_current_user
+from routes.auth import login_required, admin_required, get_current_user
 from models import create_user, get_patients, get_user
 
 # Initialize admin blueprint

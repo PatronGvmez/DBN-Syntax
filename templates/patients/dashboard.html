@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Patient Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <span class="badge bg-primary">Welcome, {{ user.name }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Information Section -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Your Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    {% if user.phone %}
+                    <p><strong>Phone:</strong> {{ user.phone }}</p>
+                    {% endif %}
+                    <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-sm btn-outline-primary">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h3 class="text-primary">{{ patient_records|length }}</h3>
+                                <p>Medical Record(s)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-center">
+                                <h3 class="text-success">{{ progress_updates|length }}</h3>
+                                <p>Recent Update(s)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medical Records Section -->
+    {% if patient_records %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Your Medical Records</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Condition</th>
+                                    <th>Treatment Plan</th>
+                                    <th>Contact Info</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in patient_records %}
+                                <tr>
+                                    <td>{{ record.medical_condition or 'Not specified' }}</td>
+                                    <td>{{ record.treatment_plan or 'Not specified' }}</td>
+                                    <td>{{ record.contact_info or 'Not specified' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('patients.view', patient_id=record.id) }}" class="btn btn-sm btn-outline-info">View Details</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5>No Medical Records Found</h5>
+                <p>We couldn't find any medical records associated with your account. If you believe this is an error, please contact your healthcare provider.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Progress Updates Section -->
+    {% if progress_updates %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Recent Progress Updates</h5>
+                </div>
+                <div class="card-body">
+                    {% for update in progress_updates %}
+                    <div class="border-start border-primary border-3 ps-3 mb-3">
+                        <h6 class="mb-1">{{ update.patient_name or 'Medical Record' }}</h6>
+                        <p class="mb-1"><strong>Status:</strong> {{ update.status }}</p>
+                        <p class="mb-1"><strong>Date:</strong> {{ update.date }}</p>
+                        {% if update.notes %}
+                        <p class="mb-1"><strong>Notes:</strong> {{ update.notes }}</p>
+                        {% endif %}
+                        {% if update.therapist_name %}
+                        <small class="text-muted">Updated by: {{ update.therapist_name }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-secondary">
+                <h5>No Recent Updates</h5>
+                <p>There are no recent progress updates for your records.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Help Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Need Help?</h5>
+                </div>
+                <div class="card-body">
+                    <p>If you have questions about your treatment or need to contact your therapist, please reach out through the contact information provided in your medical records.</p>
+                    <p>For technical support with this portal, please contact the system administrator.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

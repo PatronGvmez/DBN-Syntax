@@ -4,11 +4,11 @@ import os
 from datetime import datetime
 
 # Import custom modules
-from auth import auth_bp, login_required, admin_required, get_current_user
+from routes.auth import auth_bp, login_required, admin_required, get_current_user
 from models import initialize_firebase, get_db
-from patients import patients_bp
-from therapists import therapists_bp
-from admin import admin_bp
+from routes.patients import patients_bp
+from routes.therapists import therapists_bp
+from routes.admin import admin_bp
 
 # Load environment variables
 load_dotenv()
@@ -52,10 +52,12 @@ def home():
         if user_data:
             if user_data.get('role') == 'admin':
                 return redirect(url_for('admin.dashboard'))
-            else:
+            elif user_data.get('role') == 'therapist':
                 return redirect(url_for('therapists.dashboard'))
+            elif user_data.get('role') == 'patient':
+                return redirect(url_for('patients.dashboard'))
     return render_template('index.html')
 
 # Main execution
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8000)
