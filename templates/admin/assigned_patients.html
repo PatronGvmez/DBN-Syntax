@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}Assigned Patients - RehabTracker{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">
+        <i class="bi bi-people-fill me-2"></i>Assigned Patients
+    </h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.assignment_requests') }}" class="btn btn-outline-warning">
+            <i class="bi bi-clock-history me-2"></i>Pending Requests
+        </a>
+        <a href="{{ url_for('admin.assignment_requests') }}" class="btn btn-outline-primary">
+            <i class="bi bi-clock-history me-2"></i>Assignment Requests
+        </a>
+    </div>
+</div>
+
+{% if assigned_patients %}
+    <div class="row">
+        {% for assignment in assigned_patients %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="bi bi-person-circle me-2"></i>{{ assignment.patient.name }}
+                        </h6>
+                        <small class="badge bg-light text-dark">
+                            Active
+                        </small>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong class="text-primary">Assigned Therapist:</strong>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-badge me-2 text-success"></i>
+                                <div>
+                                    <div class="fw-bold">{{ assignment.therapist.name }}</div>
+                                    {% if assignment.therapist.email %}
+                                        <small class="text-muted">{{ assignment.therapist.email }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <strong class="text-primary">Patient Details:</strong>
+                            <div class="small">
+                                {% if assignment.patient.email %}
+                                    <div><i class="bi bi-envelope me-2"></i>{{ assignment.patient.email }}</div>
+                                {% endif %}
+                                {% if assignment.patient.phone %}
+                                    <div><i class="bi bi-telephone me-2"></i>{{ assignment.patient.phone }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if assignment.assigned_at %}
+                        <div class="mb-3">
+                            <strong class="text-primary">Assigned:</strong>
+                            <div class="small text-muted">
+                                {{ assignment.assigned_at.strftime('%B %d, %Y') if assignment.assigned_at else 'Recently' }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="d-grid gap-2">
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('patients.view', patient_id=assignment.patient.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye me-1"></i>View Patient
+                                </a>
+                                <button type="button" class="btn btn-outline-warning btn-sm" 
+                                        onclick="editAssignment('{{ assignment.patient.id }}', '{{ assignment.therapist.id }}', '{{ assignment.patient.name }}', '{{ assignment.therapist.name }}')">
+                                    <i class="bi bi-pencil me-1"></i>Edit Assignment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-people display-1 text-muted"></i>
+        </div>
+        <h3 class="text-muted">No Assigned Patients</h3>
+        <p class="text-muted">No patients have been assigned to therapists yet.</p>
+        <div class="d-flex justify-content-center gap-2">
+            <a href="{{ url_for('admin.assignment_requests') }}" class="btn btn-warning">
+                <i class="bi bi-clock-history me-2"></i>Review Pending Requests
+            </a>
+            <a href="{{ url_for('admin.assignment_requests') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Assignment Requests
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Edit Assignment Modal -->
+<div class="modal fade" id="editAssignmentModal" tabindex="-1" aria-labelledby="editAssignmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="editAssignmentModalLabel">
+                    <i class="bi bi-pencil-square me-2"></i>Edit Assignment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="editAssignmentBody">
+                <!-- Content will be loaded dynamically -->
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to edit assignment
+function editAssignment(patientId, currentTherapistId, patientName, therapistName) {
+    // Show modal and loading state
+    const modal = new bootstrap.Modal(document.getElementById('editAssignmentModal'));
+    const modalLabel = document.getElementById('editAssignmentModalLabel');
+    const bodyElement = document.getElementById('editAssignmentBody');
+    
+    // Update modal title
+    modalLabel.innerHTML = `<i class="bi bi-pencil-square me-2"></i>Edit Assignment - ${patientName}`;
+    
+    // Show loading spinner
+    bodyElement.innerHTML = `
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Load the edit form
+    fetch(`/admin/edit-assignment/${patientId}/${currentTherapistId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(html => {
+            bodyElement.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading edit form:', error);
+            bodyElement.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Error loading edit form. Please try again.
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            `;
+        });
+}
+
+// Handle assignment updates
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listener for dynamically loaded forms
+    document.getElementById('editAssignmentBody').addEventListener('submit', function(e) {
+        const form = e.target.closest('form');
+        if (form && form.action.includes('update-assignment')) {
+            const newTherapistSelect = form.querySelector('select[name="new_therapist_id"]');
+            if (newTherapistSelect && !newTherapistSelect.value) {
+                e.preventDefault();
+                alert('Please select a new therapist before updating the assignment.');
+                return;
+            }
+            
+            const selectedOption = newTherapistSelect.options[newTherapistSelect.selectedIndex];
+            const newTherapistName = selectedOption.textContent.split(' - ')[0];
+            
+            if (!confirm(`Are you sure you want to reassign this patient to ${newTherapistName}?`)) {
+                e.preventDefault();
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+
+.spinner-border {
+    width: 2rem;
+    height: 2rem;
+}
+</style>
+{% endblock %}

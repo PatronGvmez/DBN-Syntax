@@ -107,8 +107,11 @@
                     <a href="{{ url_for('patients.new') }}" class="btn btn-secondary">
                         <i class="bi bi-person-plus-fill me-2"></i>Add New Patient
                     </a>
-                    <a href="{{ url_for('admin.patient_assignments') }}" class="btn btn-accent">
-                        <i class="bi bi-people me-2"></i>Manage Assignments
+                    <a href="{{ url_for('admin.assignment_requests') }}" class="btn btn-warning">
+                        <i class="bi bi-clock-history me-2"></i>Assignment Requests
+                    </a>
+                    <a href="{{ url_for('admin.assigned_patients') }}" class="btn btn-success">
+                        <i class="bi bi-people-fill me-2"></i>Assigned Patients
                     </a>
                 </div>
             </div>

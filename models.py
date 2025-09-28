@@ -769,11 +769,26 @@ def get_pending_assignment_requests():
             request_data = request_doc.to_dict()
             request_data['id'] = request_doc.id
             
-            # Get patient info
+            # Handle nested patient_info structure (flatten it to root level)
+            if 'patient_info' in request_data and isinstance(request_data['patient_info'], dict):
+                # Flatten patient_info fields to root level
+                patient_info = request_data.pop('patient_info')
+                for key, value in patient_info.items():
+                    if key not in request_data:  # Don't overwrite existing root-level data
+                        request_data[key] = value
+            
+            # Get patient info and add to request data
             patient_id = request_data.get('patient_id')
             if patient_id:
                 patient = get_user(patient_id)
                 request_data['patient'] = patient
+                # Add patient name for easier access in templates
+                if not request_data.get('patient_name'):
+                    request_data['patient_name'] = patient.get('name') if patient else 'Unknown Patient'
+            
+            # Fallback for patient name
+            if not request_data.get('patient_name'):
+                request_data['patient_name'] = request_data.get('submitted_by', 'Unknown Patient')
             
             requests.append(request_data)
             
@@ -781,4 +796,98 @@ def get_pending_assignment_requests():
         
     except Exception as e:
         print(f"Error getting pending assignment requests: {e}")
+        return []
+
+def reject_patient_assignment_request(request_id):
+    """Reject a patient assignment request."""
+    try:
+        db = get_db()
+        
+        # Update the request status to 'rejected'
+        db.collection('patient_assignment_requests').document(request_id).update({
+            'status': 'rejected',
+            'rejected_at': firestore.SERVER_TIMESTAMP
+        })
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error rejecting patient assignment request: {e}")
+        return False
+
+def update_patient_therapist_assignment(patient_id, old_therapist_id, new_therapist_id):
+    """Update a patient's therapist assignment."""
+    try:
+        db = get_db()
+        
+        # Remove old assignment
+        unassign_patient(old_therapist_id, patient_id)
+        
+        # Create new assignment
+        assign_patient(new_therapist_id, patient_id)
+        
+        return True
+        
+    except Exception as e:
+        print(f"Error updating patient therapist assignment: {e}")
+        return False
+
+def log_assignment_change(patient_id, old_therapist_id, new_therapist_id, admin_id, reason=''):
+    """Log assignment changes for audit purposes."""
+    try:
+        db = get_db()
+        
+        log_entry = {
+            'type': 'assignment_change',
+            'patient_id': patient_id,
+            'old_therapist_id': old_therapist_id,
+            'new_therapist_id': new_therapist_id,
+            'admin_id': admin_id,
+            'reason': reason,
+            'timestamp': firestore.SERVER_TIMESTAMP
+        }
+        
+        db.collection('assignment_logs').add(log_entry)
+        return True
+        
+    except Exception as e:
+        print(f"Error logging assignment change: {e}")
+        return False
+
+def get_all_assigned_patients():
+    """Get all patients with their current therapist assignments."""
+    try:
+        db = get_db()
+        
+        # Get all patient assignments
+        assignments_ref = db.collection('patient_assignments').stream()
+        assigned_patients = []
+        
+        for assignment_doc in assignments_ref:
+            assignment_data = assignment_doc.to_dict()
+            
+            # Get patient info
+            patient_id = assignment_data.get('patient_id')
+            therapist_id = assignment_data.get('therapist_id')
+            
+            if patient_id and therapist_id:
+                patient = get_user(patient_id)
+                therapist = get_user(therapist_id)
+                
+                if patient and therapist:
+                    assigned_patients.append({
+                        'assignment_id': assignment_doc.id,
+                        'patient': patient,
+                        'therapist': therapist,
+                        'assigned_at': assignment_data.get('assigned_at'),
+                        'status': assignment_data.get('status', 'active')
+                    })
+        
+        # Sort by patient name
+        assigned_patients.sort(key=lambda x: x['patient'].get('name', ''))
+        
+        return assigned_patients
+        
+    except Exception as e:
+        print(f"Error getting all assigned patients: {e}")
         return []

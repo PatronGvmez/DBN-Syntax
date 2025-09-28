@@ -36,7 +36,7 @@
                             <a class="nav-link" href="{{ url_for('therapists.index') }}">Therapists</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('admin.patient_assignments') }}">Assignments</a>
+                            <a class="nav-link" href="{{ url_for('admin.assignment_requests') }}">Assignments</a>
                         </li>
                     {% elif user.role == 'therapist' %}
                         <li class="nav-item">
