@@ -111,81 +111,24 @@
         </div>
     </div>
 
-    <!-- Profile Completion Status (if incomplete) -->
-    {% if profile_status and not profile_status.is_complete %}
+
+
+    <!-- Quick Stats Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-clipboard-check me-2"></i>Profile Completion Status
-                        </h5>
-                        <span class="badge bg-light text-dark fs-6">{{ profile_status.completion_percentage }}% Complete</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <div class="progress mb-3" style="height: 15px;">
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                     data-completion="{{ profile_status.completion_percentage }}" 
-                                     aria-valuenow="{{ profile_status.completion_percentage }}" 
-                                     aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <p class="text-muted mb-0">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Complete your profile to help us provide better, personalized care and match you with the right therapist.
-                            </p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <a href="{{ url_for('patients.complete_profile') }}" class="btn btn-primary">
-                                <i class="bi bi-pencil-square me-2"></i>Complete Profile
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Patient Information Section -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Your Information</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Name:</strong> {{ user.name }}</p>
-                    <p><strong>Email:</strong> {{ user.email }}</p>
-                    {% if user.phone %}
-                    <p><strong>Phone:</strong> {{ user.phone }}</p>
-                    {% endif %}
-                    <a href="{{ url_for('auth.edit_profile') }}" class="btn btn-sm btn-outline-primary">Edit Profile</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Quick Stats</h5>
                 </div>
-                <div class="card-body">
-                    <div class="row">
+                <div class="card-body py-2">
+                    <div class="row text-center">
                         <div class="col-md-6">
-                            <div class="text-center">
-                                <h3 class="text-primary">{{ patient_records|length }}</h3>
-                                <p>Medical Record(s)</p>
-                            </div>
+                            <h4 class="text-primary mb-1">{{ patient_records|length }}</h4>
+                            <small class="text-muted">Medical Record(s)</small>
                         </div>
                         <div class="col-md-6">
-                            <div class="text-center">
-                                <h3 class="text-success">{{ progress_updates|length }}</h3>
-                                <p>Recent Update(s)</p>
-                            </div>
+                            <h4 class="text-success mb-1">{{ progress_updates|length }}</h4>
+                            <small class="text-muted">Recent Update(s)</small>
                         </div>
                     </div>
                 </div>

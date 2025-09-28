@@ -107,7 +107,7 @@
                             <a href="{{ url_for('patients.mindlink') }}" class="btn btn-outline-success">
                                 <i class="bi bi-chat-heart me-2"></i>Join MindLink Community
                             </a>
-                            <button class="btn btn-outline-info" onclick="alert('Crisis support: Call 988 for immediate help')">
+                            <button class="btn btn-outline-info" onclick="alert('Crisis support: Call 0800 567 567 (SADAG) for immediate help')">
                                 <i class="bi bi-shield-check me-2"></i>Crisis Resources
                             </button>
                         </div>
@@ -182,11 +182,14 @@
                     <div class="card-body">
                         <p>If you need immediate help, don't wait for assignment. Contact crisis support right away.</p>
                         <div class="d-grid gap-2">
-                            <a href="tel:988" class="btn btn-danger">
-                                <i class="bi bi-telephone-fill me-2"></i>Crisis Lifeline: 988
+                            <a href="tel:0800567567" class="btn btn-danger">
+                                <i class="bi bi-telephone-fill me-2"></i>SADAG Crisis Line: 0800 567 567
                             </a>
-                            <a href="tel:911" class="btn btn-warning">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Emergency: 911
+                            <a href="tel:0800205026" class="btn btn-info">
+                                <i class="bi bi-chat-dots-fill me-2"></i>Suicide Crisis Line: 0800 205 026
+                            </a>
+                            <a href="tel:10177" class="btn btn-warning">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Emergency Services: 10177
                             </a>
                         </div>
                     </div>
@@ -204,6 +207,11 @@
                             <i class="bi bi-file-earmark-person me-2"></i>Therapist Assignment Request
                         </h4>
                         <p class="text-muted mb-0 mt-2">Help us find the perfect therapist for your needs by providing some information about yourself.</p>
+                        {% if patient_profile %}
+                        <div class="alert alert-info mt-2 mb-0">
+                            <small><i class="bi bi-info-circle me-1"></i>Some fields have been pre-filled from your existing profile. You can modify them as needed.</small>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="card-body">
                         <form method="POST">
@@ -216,16 +224,17 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="age" class="form-label">Age *</label>
-                                    <input type="number" class="form-control" id="age" name="age" required min="1" max="120">
+                                    <input type="number" class="form-control" id="age" name="age" required min="1" max="120" 
+                                           value="{% if patient_profile and patient_profile.personal_info.age %}{{ patient_profile.personal_info.age }}{% endif %}">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="gender" class="form-label">Gender *</label>
                                     <select class="form-select" id="gender" name="gender" required>
                                         <option value="">Select gender</option>
-                                        <option value="Male">Male</option>
-                                        <option value="Female">Female</option>
-                                        <option value="Non-binary">Non-binary</option>
-                                        <option value="Prefer not to say">Prefer not to say</option>
+                                        <option value="Male" {% if patient_profile and patient_profile.personal_info.gender == 'Male' %}selected{% endif %}>Male</option>
+                                        <option value="Female" {% if patient_profile and patient_profile.personal_info.gender == 'Female' %}selected{% endif %}>Female</option>
+                                        <option value="Non-binary" {% if patient_profile and patient_profile.personal_info.gender == 'Non-binary' %}selected{% endif %}>Non-binary</option>
+                                        <option value="Prefer not to say" {% if patient_profile and patient_profile.personal_info.gender == 'Prefer not to say' %}selected{% endif %}>Prefer not to say</option>
                                     </select>
                                 </div>
                             </div>
@@ -240,7 +249,7 @@
                                 <div class="col-12 mb-3">
                                     <label for="medical_condition" class="form-label">Primary concern or condition *</label>
                                     <textarea class="form-control" id="medical_condition" name="medical_condition" rows="3" required 
-                                              placeholder="Please describe your primary mental health concern or condition you'd like help with..."></textarea>
+                                              placeholder="Please describe your primary mental health concern or condition you'd like help with...">{% if patient_profile and patient_profile.mental_health.current_symptoms %}{{ patient_profile.mental_health.current_symptoms }}{% elif patient_profile and patient_profile.medical_info.medical_history %}{{ patient_profile.medical_info.medical_history }}{% endif %}</textarea>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="severity" class="form-label">Severity Level *</label>
@@ -255,9 +264,9 @@
                                     <label for="previous_therapy" class="form-label">Previous therapy experience</label>
                                     <select class="form-select" id="previous_therapy" name="previous_therapy">
                                         <option value="">Select option</option>
-                                        <option value="None">No previous therapy</option>
-                                        <option value="Some">Some therapy experience</option>
-                                        <option value="Extensive">Extensive therapy history</option>
+                                        <option value="None" {% if patient_profile and patient_profile.mental_health.previous_therapy == 'None' %}selected{% endif %}>No previous therapy</option>
+                                        <option value="Some" {% if patient_profile and patient_profile.mental_health.previous_therapy == 'Some' %}selected{% endif %}>Some therapy experience</option>
+                                        <option value="Extensive" {% if patient_profile and patient_profile.mental_health.previous_therapy == 'Extensive' %}selected{% endif %}>Extensive therapy history</option>
                                     </select>
                                 </div>
                             </div>
@@ -293,7 +302,7 @@
                                 <div class="col-12 mb-3">
                                     <label for="availability" class="form-label">Preferred availability</label>
                                     <textarea class="form-control" id="availability" name="availability" rows="2" 
-                                              placeholder="E.g., Weekday evenings, Saturday mornings, flexible schedule..."></textarea>
+                                              placeholder="E.g., Weekday evenings, Saturday mornings, flexible schedule...">{% if patient_profile and patient_profile.lifestyle.availability %}{{ patient_profile.lifestyle.availability }}{% endif %}</textarea>
                                 </div>
                             </div>
 
@@ -307,17 +316,18 @@
                                 <div class="col-12 mb-3">
                                     <label for="goals" class="form-label">What do you hope to achieve through therapy?</label>
                                     <textarea class="form-control" id="goals" name="goals" rows="3" 
-                                              placeholder="Describe your goals and what you hope to accomplish..."></textarea>
+                                              placeholder="Describe your goals and what you hope to accomplish...">{% if patient_profile and patient_profile.mental_health.therapy_goals %}{{ patient_profile.mental_health.therapy_goals }}{% endif %}</textarea>
                                 </div>
                                 <div class="col-12 mb-3">
                                     <label for="special_requirements" class="form-label">Special requirements or considerations</label>
                                     <textarea class="form-control" id="special_requirements" name="special_requirements" rows="2" 
-                                              placeholder="Any special needs, accessibility requirements, or other considerations..."></textarea>
+                                              placeholder="Any special needs, accessibility requirements, or other considerations...">{% if patient_profile and patient_profile.lifestyle.special_requirements %}{{ patient_profile.lifestyle.special_requirements }}{% endif %}</textarea>
                                 </div>
                                 <div class="col-12 mb-3">
                                     <label for="emergency_contact" class="form-label">Emergency contact information</label>
                                     <input type="text" class="form-control" id="emergency_contact" name="emergency_contact" 
-                                           placeholder="Name and phone number of emergency contact">
+                                           placeholder="Name and phone number of emergency contact"
+                                           value="{% if patient_profile and patient_profile.personal_info.emergency_contact_name %}{{ patient_profile.personal_info.emergency_contact_name }}{% if patient_profile.personal_info.emergency_contact_phone %} - {{ patient_profile.personal_info.emergency_contact_phone }}{% endif %}{% endif %}">
                                 </div>
                             </div>
 
@@ -375,5 +385,59 @@
 .card:hover {
     transform: translateY(-2px);
 }
+
+.pre-populated {
+    background-color: #f8f9fa;
+    border-left: 3px solid #28a745;
+}
 </style>
+
+{% if patient_profile and patient_profile.personal_info.date_of_birth and not (patient_profile.personal_info.age) %}
+<script>
+var patientDOB = '{{ patient_profile.personal_info.date_of_birth }}';
+</script>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-calculate age from date of birth if available
+    if (typeof patientDOB !== 'undefined' && patientDOB && patientDOB !== '') {
+        var dob = new Date(patientDOB);
+        var today = new Date();
+        var age = today.getFullYear() - dob.getFullYear();
+        var monthDiff = today.getMonth() - dob.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+            age--;
+        }
+        
+        if (age > 0 && age < 120) {
+            var ageField = document.getElementById('age');
+            if (ageField && !ageField.value) {
+                ageField.value = age;
+            }
+        }
+    }
+    
+    // Add visual indicators for pre-populated fields
+    setTimeout(function() {
+        var formFields = document.querySelectorAll('input, select, textarea');
+        formFields.forEach(function(field) {
+            if (field.value && field.value.trim() !== '') {
+                field.classList.add('pre-populated');
+                
+                // Add a small indicator
+                var label = field.parentNode.querySelector('label');
+                if (label && !label.querySelector('.profile-indicator')) {
+                    var indicator = document.createElement('small');
+                    indicator.textContent = ' (from your profile)';
+                    indicator.className = 'text-success profile-indicator';
+                    indicator.style.fontSize = '0.75rem';
+                    label.appendChild(indicator);
+                }
+            }
+        });
+    }, 100);
+});
+</script>
 {% endblock %}

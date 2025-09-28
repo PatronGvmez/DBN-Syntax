@@ -213,13 +213,26 @@ def my_therapist():
         return redirect(url_for('home'))
     
     from models import (get_patient_assignment_request, create_patient_assignment_request, 
-                       get_patient_assigned_therapist)
+                       get_patient_assigned_therapist, get_patient_full_profile, update_patient_profile)
     
     patient_id = user.get('id')
     
+    # Get patient's existing profile data for form pre-population
+    patient_profile = get_patient_full_profile(patient_id)
+    
     # Check if patient already has an assignment request or assigned therapist
-    assignment_request = get_patient_assignment_request(patient_id)
-    assigned_therapist = get_patient_assigned_therapist(patient_id)
+    try:
+        assignment_request = get_patient_assignment_request(patient_id)
+        assigned_therapist = get_patient_assigned_therapist(patient_id)
+    except Exception as e:
+        # Handle database connection issues gracefully
+        assignment_request = None
+        assigned_therapist = None
+        error_msg = str(e)
+        if "requires an index" in error_msg:
+            flash('Database configuration issue detected. Please contact support if this persists.', 'warning')
+        else:
+            flash(f'Unable to load therapist assignment data: {str(e)}', 'warning')
     
     # Handle form submission for new assignment request
     if request.method == 'POST':
@@ -241,18 +254,90 @@ def my_therapist():
         goals = request.form.get('goals', '')
         emergency_contact = request.form.get('emergency_contact', '')
         
+        # Debug: Print form data
+        print(f"Form data received: age={age}, gender={gender}, medical_condition={medical_condition}")
+        
         # Basic validation
-        if not all([age, gender, medical_condition, severity, therapy_type_preference]):
-            flash('Please fill in all required fields.', 'danger')
+        required_fields = {'age': age, 'gender': gender, 'medical_condition': medical_condition, 
+                          'severity': severity, 'therapy_type_preference': therapy_type_preference}
+        missing_fields = [field for field, value in required_fields.items() if not value or (isinstance(value, str) and not value.strip())]
+        
+        if missing_fields:
+            flash(f'Please fill in all required fields: {", ".join(missing_fields)}', 'danger')
             return render_template('patients/my_therapist.html', 
                                  user=user,
+                                 patient_profile=patient_profile,
                                  assignment_request=assignment_request,
                                  assigned_therapist=assigned_therapist)
         
         try:
-            # Create patient info object
+            # Validate age
+            if not age or not str(age).isdigit():
+                raise ValueError(f"Invalid age value: '{age}'. Age must be a number.")
+            
+            age_int = int(age)
+            if age_int < 1 or age_int > 120:
+                raise ValueError(f"Age must be between 1 and 120, got: {age_int}")
+                
+            # Update patient profile with form data (save to profile for future use)
+            profile_updates = {
+                'personal_info': {
+                    'gender': gender,
+                    'emergency_contact_name': emergency_contact.split(' - ')[0] if ' - ' in emergency_contact and emergency_contact else emergency_contact,
+                    'emergency_contact_phone': emergency_contact.split(' - ')[1] if ' - ' in emergency_contact and len(emergency_contact.split(' - ')) > 1 else '',
+                },
+                'medical_info': {
+                    'medical_history': medical_condition,
+                },
+                'mental_health': {
+                    'therapy_goals': goals,
+                    'previous_therapy': previous_therapy,
+                    'current_symptoms': medical_condition,
+                },
+                'lifestyle': {
+                    'special_requirements': special_requirements,
+                }
+            }
+            
+            # Calculate age from date of birth if available, otherwise store age directly
+            if age_int:
+                from datetime import datetime
+                current_year = datetime.now().year
+                birth_year = current_year - age_int
+                profile_updates['personal_info']['age'] = age_int
+                # Only update DOB if not already set
+                if not (patient_profile and patient_profile.get('personal_info', {}).get('date_of_birth')):
+                    profile_updates['personal_info']['date_of_birth'] = f"{birth_year}-01-01"
+            
+            # Merge with existing profile data to avoid overwriting
+            if patient_profile:
+                print(f"Merging with existing profile data...")
+                for category, fields in profile_updates.items():
+                    existing_category = patient_profile.get(category, {})
+                    for field, value in fields.items():
+                        # Handle both string and non-string values
+                        try:
+                            if value is not None:
+                                if isinstance(value, str) and value.strip():
+                                    existing_category[field] = value
+                                    print(f"Updated {category}.{field} with string value: {value}")
+                                elif not isinstance(value, str) and value:
+                                    existing_category[field] = value
+                                    print(f"Updated {category}.{field} with non-string value: {value} (type: {type(value)})")
+                        except Exception as field_error:
+                            print(f"Error processing field {category}.{field} with value {value} (type: {type(value)}): {field_error}")
+                            raise field_error
+                    profile_updates[category] = existing_category
+            
+            # Save profile updates
+            user_id = session.get('user_id')
+            print(f"Saving profile updates for user {user_id}...")
+            update_result = update_patient_profile(user_id, profile_updates)
+            print(f"Profile update result: {update_result}")
+            
+            # Create patient info object for assignment request
             patient_info = {
-                'age': int(age) if age.isdigit() else 0,
+                'age': age_int,
                 'gender': gender,
                 'medical_condition': medical_condition,
                 'severity': severity,
@@ -271,22 +356,39 @@ def my_therapist():
             request_id = create_patient_assignment_request(patient_id, patient_info)
             
             if request_id:
-                flash('Your therapist assignment request has been submitted successfully! Please wait for an administrator to review and assign you to a suitable therapist.', 'success')
+                flash('Your therapist assignment request has been submitted successfully! Your profile has also been updated with this information. Please wait for an administrator to review and assign you to a suitable therapist.', 'success')
                 return redirect(url_for('patients.my_therapist'))
             else:
                 flash('Failed to submit assignment request. You may already have an active request.', 'danger')
                 
-        except ValueError:
-            flash('Please enter a valid age.', 'danger')
+        except ValueError as e:
+            error_msg = f'Please enter a valid age: {str(e)}'
+            flash(error_msg, 'danger')
+            print(f"ValueError in assignment request: {e}")
+        except AttributeError as e:
+            error_msg = f'Data format error: {str(e)}. Please check your input values.'
+            flash(error_msg, 'danger')
+            print(f"AttributeError in assignment request: {e}")
+            import traceback
+            traceback.print_exc()
         except Exception as e:
-            flash('An error occurred while submitting your request. Please try again.', 'danger')
+            # Show specific error message to help with debugging
+            error_msg = f'Error submitting request: {str(e)}'
+            flash(error_msg, 'danger')
             print(f"Error creating assignment request: {e}")
+            import traceback
+            traceback.print_exc()
     
     # Refresh assignment request after potential creation
-    assignment_request = get_patient_assignment_request(patient_id)
+    try:
+        assignment_request = get_patient_assignment_request(patient_id)
+    except Exception as e:
+        assignment_request = None
+        print(f"Error refreshing assignment request: {e}")
     
     return render_template('patients/my_therapist.html', 
                           user=user,
+                          patient_profile=patient_profile,
                           assignment_request=assignment_request,
                           assigned_therapist=assigned_therapist)
 

@@ -679,7 +679,12 @@ def get_patient_assignment_request(patient_id):
         return None
         
     except Exception as e:
-        print(f"Error getting patient assignment request: {e}")
+        error_msg = str(e)
+        if "requires an index" in error_msg:
+            print(f"Firestore index required for patient assignment requests. Please create the index in Firebase Console.")
+        else:
+            print(f"Error getting patient assignment request: {e}")
+        # Return None to handle gracefully on frontend
         return None
 
 def get_patient_assigned_therapist(patient_id):
