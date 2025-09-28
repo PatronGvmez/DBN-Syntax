@@ -242,6 +242,8 @@ def my_therapist():
             return redirect(url_for('patients.my_therapist'))
         
         # Get form data
+        patient_name = request.form.get('patient_name', '')
+        patient_email = request.form.get('patient_email', '')
         age = request.form.get('age', '')
         gender = request.form.get('gender', '')
         medical_condition = request.form.get('medical_condition', '')
@@ -258,12 +260,24 @@ def my_therapist():
         print(f"Form data received: age={age}, gender={gender}, medical_condition={medical_condition}")
         
         # Basic validation
-        required_fields = {'age': age, 'gender': gender, 'medical_condition': medical_condition, 
-                          'severity': severity, 'therapy_type_preference': therapy_type_preference}
+        required_fields = {'patient_name': patient_name, 'patient_email': patient_email, 'age': age, 'gender': gender, 'medical_condition': medical_condition, 
+                          'severity': severity, 'therapy_type_preference': therapy_type_preference,
+                          'communication_preference': communication_preference, 'availability': availability}
         missing_fields = [field for field, value in required_fields.items() if not value or (isinstance(value, str) and not value.strip())]
         
         if missing_fields:
             flash(f'Please fill in all required fields: {", ".join(missing_fields)}', 'danger')
+            return render_template('patients/my_therapist.html', 
+                                 user=user,
+                                 patient_profile=patient_profile,
+                                 assignment_request=assignment_request,
+                                 assigned_therapist=assigned_therapist)
+        
+        # Validate email format
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, patient_email):
+            flash('Please enter a valid email address.', 'danger')
             return render_template('patients/my_therapist.html', 
                                  user=user,
                                  patient_profile=patient_profile,
@@ -337,6 +351,8 @@ def my_therapist():
             
             # Create patient info object for assignment request
             patient_info = {
+                'patient_name': patient_name,
+                'patient_email': patient_email,
                 'age': age_int,
                 'gender': gender,
                 'medical_condition': medical_condition,

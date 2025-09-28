@@ -858,30 +858,106 @@ def get_all_assigned_patients():
     """Get all patients with their current therapist assignments."""
     try:
         db = get_db()
-        
-        # Get all patient assignments
-        assignments_ref = db.collection('patient_assignments').stream()
         assigned_patients = []
         
-        for assignment_doc in assignments_ref:
-            assignment_data = assignment_doc.to_dict()
+        # Method 1: Get from patient_assignment_requests (new method)
+        try:
+            requests_query = db.collection('patient_assignment_requests').where('status', '==', 'approved')
+            approved_requests = list(requests_query.stream())
             
-            # Get patient info
-            patient_id = assignment_data.get('patient_id')
-            therapist_id = assignment_data.get('therapist_id')
-            
-            if patient_id and therapist_id:
-                patient = get_user(patient_id)
-                therapist = get_user(therapist_id)
+            for assignment_doc in approved_requests:
+                assignment_data = assignment_doc.to_dict()
                 
-                if patient and therapist:
-                    assigned_patients.append({
-                        'assignment_id': assignment_doc.id,
-                        'patient': patient,
-                        'therapist': therapist,
-                        'assigned_at': assignment_data.get('assigned_at'),
-                        'status': assignment_data.get('status', 'active')
-                    })
+                # Get patient info
+                patient_id = assignment_data.get('patient_id')
+                therapist_id = assignment_data.get('assigned_therapist_id')
+                
+                if patient_id and therapist_id:
+                    patient = get_user(patient_id)
+                    therapist = get_user(therapist_id)
+                    
+                    if patient and therapist:
+                        # Get patient name from assignment data if available
+                        patient_name = assignment_data.get('patient_name') or patient.get('name') or 'Unknown Patient'
+                        
+                        # Flatten patient_info if it exists
+                        patient_info = assignment_data.get('patient_info', {})
+                        if isinstance(patient_info, dict):
+                            for key, value in patient_info.items():
+                                if key not in assignment_data:
+                                    assignment_data[key] = value
+                        
+                        assigned_patients.append({
+                            'assignment_id': assignment_doc.id,
+                            'patient': {
+                                **patient,
+                                'name': patient_name,
+                                'assignment_details': {
+                                    'age': assignment_data.get('age'),
+                                    'gender': assignment_data.get('gender'),
+                                    'medical_condition': assignment_data.get('medical_condition'),
+                                    'severity': assignment_data.get('severity'),
+                                    'therapy_type_preference': assignment_data.get('therapy_type_preference'),
+                                    'communication_preference': assignment_data.get('communication_preference'),
+                                    'goals': assignment_data.get('goals'),
+                                    'emergency_contact': assignment_data.get('emergency_contact')
+                                }
+                            },
+                            'therapist': therapist,
+                            'assigned_at': assignment_data.get('assigned_at'),
+                            'created_at': assignment_data.get('created_at'),
+                            'status': 'active',
+                            'request_data': assignment_data  # Include full assignment request data
+                        })
+                    
+        except Exception as e:
+            print(f"Error with assignment requests method: {e}")
+        
+        # Method 2: Fallback to assignments collection (legacy method)
+        if not assigned_patients:
+            try:
+                assignments_ref = db.collection('assignments').stream()
+                legacy_assignments = list(assignments_ref)
+                
+                for assignment_doc in legacy_assignments:
+                    assignment_data = assignment_doc.to_dict()
+                    
+                    # Get patient info
+                    patient_id = assignment_data.get('patient_id')
+                    therapist_id = assignment_data.get('therapist_id')
+                    
+                    if patient_id and therapist_id:
+                        patient = get_user(patient_id)
+                        therapist = get_user(therapist_id)
+                        
+                        if patient and therapist:
+                            assigned_patients.append({
+                                'assignment_id': assignment_doc.id,
+                                'patient': {
+                                    **patient,
+                                    'assignment_details': {
+                                        'age': 'Unknown',
+                                        'gender': 'Unknown',
+                                        'medical_condition': 'Legacy assignment - no details available',
+                                        'severity': 'Unknown',
+                                        'therapy_type_preference': 'Unknown',
+                                        'communication_preference': 'Unknown',
+                                        'goals': 'Unknown',
+                                        'emergency_contact': 'Unknown'
+                                    }
+                                },
+                                'therapist': therapist,
+                                'assigned_at': assignment_data.get('assigned_at') or assignment_data.get('created_at'),
+                                'created_at': assignment_data.get('created_at'),
+                                'status': 'active',
+                                'request_data': {
+                                    'severity': 'Unknown',
+                                    'medical_condition': 'Legacy assignment - no details available'
+                                }
+                            })
+                            
+            except Exception as e:
+                print(f"Error with legacy assignments method: {e}")
         
         # Sort by patient name
         assigned_patients.sort(key=lambda x: x['patient'].get('name', ''))
@@ -890,4 +966,6 @@ def get_all_assigned_patients():
         
     except Exception as e:
         print(f"Error getting all assigned patients: {e}")
+        import traceback
+        traceback.print_exc()
         return []

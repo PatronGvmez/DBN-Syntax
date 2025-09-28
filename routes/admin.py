@@ -358,11 +358,15 @@ def assigned_patients():
         from models import get_all_assigned_patients
         
         assigned_patients = get_all_assigned_patients()
+        print(f"INFO: Loading {len(assigned_patients)} assigned patients")
         
         return render_template('admin/assigned_patients.html', 
                               assigned_patients=assigned_patients)
         
     except Exception as e:
+        print(f"ERROR in assigned_patients route: {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error loading assigned patients: {str(e)}', 'danger')
         return redirect(url_for('admin.dashboard'))
 

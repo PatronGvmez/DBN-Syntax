@@ -223,6 +223,18 @@
                                     </h5>
                                 </div>
                                 <div class="col-md-6 mb-3">
+                                    <label for="patient_name" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="patient_name" name="patient_name" required 
+                                           value="{{ user.name if user.name else '' }}" 
+                                           placeholder="Enter your full name">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="patient_email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="patient_email" name="patient_email" required 
+                                           value="{{ user.email if user.email else '' }}" 
+                                           placeholder="Enter your email address">
+                                </div>
+                                <div class="col-md-6 mb-3">
                                     <label for="age" class="form-label">Age *</label>
                                     <input type="number" class="form-control" id="age" name="age" required min="1" max="120" 
                                            value="{% if patient_profile and patient_profile.personal_info.age %}{{ patient_profile.personal_info.age }}{% endif %}">
@@ -282,26 +294,29 @@
                                     <label for="therapy_type_preference" class="form-label">Preferred therapy type *</label>
                                     <select class="form-select" id="therapy_type_preference" name="therapy_type_preference" required>
                                         <option value="">Select therapy type</option>
-                                        <option value="CBT">Cognitive Behavioral Therapy (CBT)</option>
-                                        <option value="DBT">Dialectical Behavior Therapy (DBT)</option>
-                                        <option value="Psychodynamic">Psychodynamic Therapy</option>
-                                        <option value="Humanistic">Humanistic/Person-Centered</option>
+                                        <option value="CBT (Cognitive Behavioral Therapy)">CBT (Cognitive Behavioral Therapy)</option>
+                                        <option value="DBT (Dialectical Behavior Therapy)">DBT (Dialectical Behavior Therapy)</option>
+                                        <option value="EMDR Therapy">EMDR Therapy</option>
+                                        <option value="Psychodynamic Therapy">Psychodynamic Therapy</option>
+                                        <option value="Humanistic/Person-Centered">Humanistic/Person-Centered</option>
+                                        <option value="Family Therapy">Family Therapy</option>
+                                        <option value="Group Therapy">Group Therapy</option>
                                         <option value="No preference">No preference</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="communication_preference" class="form-label">Communication preference</label>
-                                    <select class="form-select" id="communication_preference" name="communication_preference">
+                                    <label for="communication_preference" class="form-label">Communication preference *</label>
+                                    <select class="form-select" id="communication_preference" name="communication_preference" required>
                                         <option value="">Select preference</option>
-                                        <option value="In-person">In-person sessions</option>
-                                        <option value="Video call">Video call sessions</option>
-                                        <option value="Phone">Phone sessions</option>
-                                        <option value="Mixed">Mixed (flexible)</option>
+                                        <option value="In-person sessions only">In-person sessions only</option>
+                                        <option value="Video call sessions">Video call sessions</option>
+                                        <option value="Phone sessions">Phone sessions</option>
+                                        <option value="Mixed/Flexible">Mixed (flexible)</option>
                                     </select>
                                 </div>
                                 <div class="col-12 mb-3">
-                                    <label for="availability" class="form-label">Preferred availability</label>
-                                    <textarea class="form-control" id="availability" name="availability" rows="2" 
+                                    <label for="availability" class="form-label">Preferred availability *</label>
+                                    <textarea class="form-control" id="availability" name="availability" rows="2" required
                                               placeholder="E.g., Weekday evenings, Saturday mornings, flexible schedule...">{% if patient_profile and patient_profile.lifestyle.availability %}{{ patient_profile.lifestyle.availability }}{% endif %}</textarea>
                                 </div>
                             </div>
@@ -340,6 +355,15 @@
                                         </h6>
                                         <p class="mb-0">
                                             Your information will be reviewed by our administrators who will match you with a qualified therapist based on your needs, preferences, and availability. You'll be notified once the assignment is made.
+                                        </p>
+                                    </div>
+                                    
+                                    <div class="alert alert-warning">
+                                        <h6 class="alert-heading">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>Important Note
+                                        </h6>
+                                        <p class="mb-0">
+                                            Please ensure all required fields are completed accurately. This information helps us match you with the most suitable therapist for your needs.
                                         </p>
                                     </div>
                                     <div class="d-grid">
@@ -390,6 +414,31 @@
     background-color: #f8f9fa;
     border-left: 3px solid #28a745;
 }
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.alert {
+    border-radius: 8px;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn {
+    border-radius: 6px;
+}
 </style>
 
 {% if patient_profile and patient_profile.personal_info.date_of_birth and not (patient_profile.personal_info.age) %}
@@ -438,6 +487,70 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }, 100);
+    
+    // Form validation
+    var assignmentForm = document.querySelector('form');
+    if (assignmentForm) {
+        assignmentForm.addEventListener('submit', function(e) {
+            var isValid = true;
+            var errorMessages = [];
+            
+            // Check required fields
+            var requiredFields = [
+                {id: 'patient_name', name: 'Full Name'},
+                {id: 'patient_email', name: 'Email Address'},
+                {id: 'age', name: 'Age'},
+                {id: 'gender', name: 'Gender'},
+                {id: 'medical_condition', name: 'Primary concern'},
+                {id: 'severity', name: 'Severity level'},
+                {id: 'therapy_type_preference', name: 'Therapy type preference'},
+                {id: 'communication_preference', name: 'Communication preference'},
+                {id: 'availability', name: 'Availability'}
+            ];
+            
+            requiredFields.forEach(function(field) {
+                var element = document.getElementById(field.id);
+                if (element && (!element.value || element.value.trim() === '')) {
+                    isValid = false;
+                    errorMessages.push(field.name);
+                    element.classList.add('is-invalid');
+                } else if (element) {
+                    element.classList.remove('is-invalid');
+                }
+            });
+            
+            // Validate email format
+            var emailField = document.getElementById('patient_email');
+            if (emailField && emailField.value) {
+                var emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailPattern.test(emailField.value)) {
+                    isValid = false;
+                    errorMessages.push('Valid email address');
+                    emailField.classList.add('is-invalid');
+                }
+            }
+            
+            // Validate age range
+            var ageField = document.getElementById('age');
+            if (ageField && ageField.value) {
+                var age = parseInt(ageField.value);
+                if (isNaN(age) || age < 1 || age > 120) {
+                    isValid = false;
+                    errorMessages.push('Valid age (1-120)');
+                    ageField.classList.add('is-invalid');
+                }
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please correct the following fields:\n• ' + errorMessages.join('\n• '));
+                return false;
+            }
+            
+            // Confirm submission
+            return confirm('Are you sure you want to submit your therapist assignment request? Please ensure all information is accurate as this will help us match you with the most suitable therapist.');
+        });
+    }
 });
 </script>
 {% endblock %}
